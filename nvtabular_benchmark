@@ -7,6 +7,8 @@ export INSTANCE_NAME="merlin-dev"
 export VM_IMAGE_PROJECT="deeplearning-platform-release"
 export VM_IMAGE_FAMILY="common-cu110"
 export MACHINE_TYPE="a2-highgpu-2g"
+export BUCKET_REGION="us-central1"
+export BUCKET_NAME=gs://jk-criteo-bucket
 export LOCATION="us-central1-c"
 export ACCELERATOR_TYPE=NVIDIA_TESLA_A100
 export ACCELERATOR_COUNT=2
@@ -22,5 +24,12 @@ gcloud notebooks instances create $INSTANCE_NAME \
 --accelerator-core-count=$ACCELERATOR_COUNT \
 --boot-disk-size=$BOOT_DISK_SIZE \
 --install-gpu-driver
+
+```
+
+## Preparing a Criteo dataset
+
+```
+gsutil mb -l $BUCKET_REGION $BUCKET_NAME
 
 ```
