@@ -1,0 +1,25 @@
+# Testing GCS performance with NVTabular
+
+## Provisioning a test VM
+
+```
+export INSTANCE_NAME="example-instance"
+export VM_IMAGE_PROJECT="deeplearning-platform-release"
+export VM_IMAGE_FAMILY="common-cu110"
+export MACHINE_TYPE="a2-highgpu-2g"
+export LOCATION="us-central1-c"
+export ACCELERATOR_TYPE=NVIDIA-TESLA-A100
+export ACCELERATOR_COUNT=2
+
+
+gcloud notebooks instances create $INSTANCE_NAME \
+--location=$LOCATION \
+--vm-image-project=$VM_IMAGE_PROJECT \
+--vm-image-family=$VM_IMAGE_FAMILY \
+--machine-type=$MACHINE_TYPE \
+--accelerator type=$ACCELERATOR_TYPE \
+--accelerator_core_count=$ACCELERATOR_COUNT \
+--boot-disk-size=500G \
+--install-gpu-driver
+
+```
