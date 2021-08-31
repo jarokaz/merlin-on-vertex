@@ -78,3 +78,21 @@ python dask-nvtabular-criteo-benchmark.py \
 --profile dask-report.html
 
 ```
+
+Alternatively you can use NVIDIA NGC container
+
+```
+docker run -it --rm --gpus all \
+-v /home/jupyter/merlin-on-vertex/nvtabular_gcs_performance:/src \
+-v /tmp:/out \
+nvcr.io/nvidia/merlin/merlin-training:0.5.3 \
+python /src/dask-nvtabular-criteo-benchmark.py \
+--data-path gs://jk-criteo-bucket/criteo-parque \
+--out-path gs://jk-criteo-bucket/test_output \
+--devices "0,1" \
+--device-limit-frac 0.8 \
+--device-pool-frac 0.9 \
+--num-io-threads 0 \
+--part-mem-frac 0.125 \
+--profile /out/dask-report.html
+```
