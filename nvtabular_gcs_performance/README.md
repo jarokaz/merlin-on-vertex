@@ -5,6 +5,7 @@
 From Cloud Shell
 
 ```
+export PROJECT_ID=jk-mlops-dev
 export INSTANCE_NAME="merlin-dev"
 export VM_IMAGE_PROJECT="deeplearning-platform-release"
 export VM_IMAGE_FAMILY="common-cu110"
@@ -15,6 +16,7 @@ export LOCATION="us-central1-c"
 export ACCELERATOR_TYPE=NVIDIA_TESLA_A100
 export ACCELERATOR_COUNT=2
 export BOOT_DISK_SIZE=500
+
 
 
 gcloud notebooks instances create $INSTANCE_NAME \
@@ -46,47 +48,29 @@ gsutil -m cp -r gs://workshop-datasets/criteo-parque $BUCKET_NAME/
 
 ```
 
-## Install NVTabular
 
-```
-git clone https://github.com/NVIDIA/NVTabular.git
-cd NVTabular/
-conda env create -f=conda/environments/nvtabular_dev_cuda11.2.yml 
-conda activate nvtabular_dev_11.2
-python -m ipykernel install --user --name=nvt-11-2
-pip install -e .
-pip install gcsfs
-pip install google-cloud-storage
-```
 
 ## Run a benchmark
 
+### Clone the repo
 ```
 cd 
 git clone https://github.com/merlin-on-vertex
 cd merlin-on-vertex/nvtabular_benchmark
 
-
-python dask-nvtabular-criteo-benchmark.py \
---data-path gs://jk-criteo-bucket/criteo-parque \
---out-path gs://jk-criteo-bucket/test_output \
---devices "0,1" \
---device-limit-frac 0.8 \
---device-pool-frac 0.9 \
---num-io-threads 0 \
---part-mem-frac 0.125 \
---profile dask-report.html
-
 ```
 
-Alternatively you can use NVIDIA NGC container
+### Build a container
+
+```
+docker build -t nvt-test .
+```
 
 ```
 docker run -it --rm --gpus all \
--v /home/jupyter/merlin-on-vertex/nvtabular_gcs_performance:/src \
 -v /tmp:/out \
-nvcr.io/nvidia/merlin/merlin-training:0.5.3 \
-python /src/dask-nvtabular-criteo-benchmark.py \
+nvt-test \
+python dask-nvtabular-criteo-benchmark.py \
 --data-path gs://jk-criteo-bucket/criteo-parque \
 --out-path gs://jk-criteo-bucket/test_output \
 --devices "0,1" \
