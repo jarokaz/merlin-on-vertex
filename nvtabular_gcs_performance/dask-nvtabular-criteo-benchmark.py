@@ -163,6 +163,11 @@ def main(args):
     device_pool_size = int(args.device_pool_frac * device_size)
     part_size = int(args.part_mem_frac * device_size)
 
+    logging.info('Device size: {}'.format(device_size))
+    logging.info('Device limit: {}'.format(device_limit))
+    logging.info('Device pool size: {}'.format(device_pool_size))
+    logging.info('Part size: {}'.format(part_size))
+
     # Parse shuffle option
     shuffle = None
     if args.shuffle == "PER_WORKER":

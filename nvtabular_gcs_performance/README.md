@@ -71,8 +71,8 @@ docker run -it --rm --gpus all \
 -v /tmp:/out \
 nvt-test \
 python dask-nvtabular-criteo-benchmark.py \
---data-path gs://jk-criteo-bucket/criteo-parque \
---out-path gs://jk-criteo-bucket/test_output \
+--data-path gs://jk-vertex-us-central1/criteo_8 \
+--out-path gs://jk-vertex-us-central1/nvt-tests/test_output \
 --devices "0,1" \
 --device-limit-frac 0.8 \
 --device-pool-frac 0.9 \
