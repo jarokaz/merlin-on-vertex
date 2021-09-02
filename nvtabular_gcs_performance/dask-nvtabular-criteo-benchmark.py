@@ -232,6 +232,9 @@ def main(args):
     logging.info('Creating Dataset') 
     dataset = Dataset(data_path, "parquet", part_size=part_size)
 
+    logging.info('Num or rows: {}'.format(dataset.num_rows))
+    logging.info('Num of partitions: {}'.format(dataset.npartitions))
+
     # Execute the dask graph
     runtime = time.time()
 

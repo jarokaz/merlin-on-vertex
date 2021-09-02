@@ -80,3 +80,14 @@ python dask-nvtabular-criteo-benchmark.py \
 --part-mem-frac 0.125 \
 --profile /out/dask-report.html
 ```
+```
+python dask-nvtabular-criteo-benchmark.py \
+--out-path /home/jupyter/output \
+--devices "0,1,2,3" \
+--device-limit-frac 0.8 \
+--device-pool-frac 0.9 \
+--num-io-threads 0 \
+--part-mem-frac 0.125 \
+--profile /home/jupyter/output/dask-report.html \
+--data-path /home/jupyter/criteo/criteo_2 
+```
