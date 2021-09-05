@@ -71,23 +71,25 @@ docker run -it --rm --gpus all \
 -v /tmp:/out \
 nvt-test \
 python dask-nvtabular-criteo-benchmark.py \
---data-path gs://jk-vertex-us-central1/criteo_8 \
---out-path gs://jk-vertex-us-central1/nvt-tests/test_output \
---devices "0,1" \
---device-limit-frac 0.8 \
---device-pool-frac 0.9 \
---num-io-threads 0 \
---part-mem-frac 0.125 \
---profile /out/dask-report.html
-```
-```
-python dask-nvtabular-criteo-benchmark.py \
---out-path /home/jupyter/output \
+--out-path gs://jk-criteo-bucket/nvt-tests/output  \
 --devices "0,1,2,3" \
 --device-limit-frac 0.8 \
 --device-pool-frac 0.9 \
 --num-io-threads 0 \
---part-mem-frac 0.125 \
+--part-mem-frac 0.12 \
+--profile /out/dask-report.html \
+--data-path gs://jk-criteo-bucket/criteo_2 
+```
+
+
+```
+python dask-nvtabular-criteo-benchmark.py \
+--out-path gs://jk-criteo-bucket/nvt-tests/output \
+--devices "0,1,2,3" \
+--device-limit-frac 0.8 \
+--device-pool-frac 0.9 \
+--num-io-threads 0 \
+--part-mem-frac 0.12 \
 --profile /home/jupyter/output/dask-report.html \
---data-path /home/jupyter/criteo/criteo_2 
+--data-path gs://jk-criteo-bucket/criteo_2 
 ```
