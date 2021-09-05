@@ -78,9 +78,24 @@ python dask-nvtabular-criteo-benchmark.py \
 --num-io-threads 0 \
 --part-mem-frac 0.12 \
 --profile /out/dask-report.html \
---data-path gs://jk-criteo-bucket/criteo_2 
+--data-path gs://jk-criteo-bucket/criteo_16_per_file 
 ```
 
+```
+docker run -it --rm --gpus all \
+-v /tmp:/out \
+-v /home/jupyter/criteo:/data \
+nvt-test \
+python dask-nvtabular-criteo-benchmark.py \
+--out-path /out/output  \
+--devices "0,1,2,3" \
+--device-limit-frac 0.8 \
+--device-pool-frac 0.9 \
+--num-io-threads 0 \
+--part-mem-frac 0.12 \
+--profile /out/dask-report.html \
+--data-path /data/criteo_16_per_file
+```
 
 ```
 python dask-nvtabular-criteo-benchmark.py \
@@ -91,5 +106,17 @@ python dask-nvtabular-criteo-benchmark.py \
 --num-io-threads 0 \
 --part-mem-frac 0.12 \
 --profile /home/jupyter/output/dask-report.html \
---data-path gs://jk-criteo-bucket/criteo_2 
+--data-path gs://jk-criteo-bucket/criteo_16_per_file 
+```
+
+```
+python dask-nvtabular-criteo-benchmark.py \
+--out-path /tmp/output \
+--devices "0,1,2,3" \
+--device-limit-frac 0.8 \
+--device-pool-frac 0.9 \
+--num-io-threads 0 \
+--part-mem-frac 0.12 \
+--profile /tmp/output/dask-report.html \
+--data-path /home/jupyter/criteo/criteo_16_per_file 
 ```

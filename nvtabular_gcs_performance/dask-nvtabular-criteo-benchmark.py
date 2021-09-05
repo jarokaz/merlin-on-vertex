@@ -37,6 +37,8 @@ try:
 except ImportError:
     storage = None
 
+import nvtabular
+
 from nvtabular import Dataset, Workflow
 from nvtabular import io as nvt_io
 from nvtabular import ops
@@ -118,6 +120,7 @@ def main(args):
     """
 
     logging.info('Starting the job')
+    logging.info('NVTabular version: {}'.format(nvtabular.__version__))
 
 
     # Input
@@ -266,6 +269,7 @@ def main(args):
     end_time = time.time()
     process_elapsed_time = end_time - start_time
     logging.info('Processing completed.')
+    logging.info('Output in {}'.format(output_path))
     
     runtime = time.time() - runtime
 
