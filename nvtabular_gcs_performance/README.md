@@ -120,3 +120,9 @@ python dask-nvtabular-criteo-benchmark.py \
 --profile /tmp/output/dask-report.html \
 --data-path /home/jupyter/criteo/criteo_16_per_file 
 ```
+
+
+```
+docker build -t gcr.io/jk-mlops-dev/nvt-test .
+docker push gcr.io/jk-mlops-dev/nvt-test
+```
