@@ -92,8 +92,7 @@ class GcsCopyUtils:
         self.extension = extension
 
     def compose_gcloud_download_cmd(self) -> str:
-        '''Composes a gcloud command for the download operation,
-        with the destination provided, to be executed'''
+        '''Composes a gcloud command for the download operation'''
         rec_symbol = '**' if self.recursive else '*'
         formated_paths = []
 
@@ -116,14 +115,14 @@ class GcsCopyUtils:
         return gcloud_cmd
 
     def compose_gcloud_upload_cmd(self) -> List[str]:
-        '''Composes a gcloud command for the upload operation,
-        with the destination provided, to be executed'''
+        '''Composes a gcloud command for the upload operation'''
         gcloud_cmd = ['gcloud', 'alpha', 'storage', 'cp', 
                             '-r', self.local_download_path, self.gcs_dest]
         return gcloud_cmd
 
     def execute_gcloud_cmd(self, gcloud_cmd: List[str]) -> Dict[str,str]:
-        '''Execute a gcloud alpha storage command and return stderr/stdout'''
+        '''Execute a gcloud alpha storage command and return 
+        the stderr/stdout'''
         output = subprocess.run(gcloud_cmd, capture_output=True, text=True)
         return {'returncode': output.returncode,
                 'stdout': output.stdout,
