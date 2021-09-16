@@ -36,13 +36,13 @@ def compile_pipeline(package_path):
        package_path=package_path)
     
     
-def run_pipeline(package_path, parameter_values, job_name, vertex_sa):
+def run_pipeline(package_path, parameter_values, job_name, vertex_sa, caching=False):
     
     
     pipeline_job = aiplatform.PipelineJob(
         display_name=job_name,
         template_path=PACKAGE_PATH,
-        enable_caching=True,
+        enable_caching=caching,
         parameter_values=parameter_values,
     )
     

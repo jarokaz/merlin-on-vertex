@@ -37,6 +37,8 @@ def ingest_csv_op(
     from dask_cuda import LocalCUDACluster
     from dask.distributed import Client
     
+    logging.basicConfig(level=logging.INFO)
+    
     TRAIN_SPLIT_FOLDER = 'train'
     VALID_SPLIT_FOLDER = 'valid'
     
@@ -100,6 +102,8 @@ def fit_workflow_op(
         Normalize,
     )
     
+    logging.basicConfig(level=logging.INFO)
+    
     STATS_FOLDER = 'stats'
     WORKFLOW_FOLDER = 'workflow'
     
@@ -135,14 +139,17 @@ def fit_workflow_op(
     cont_features = CONTINUOUS_COLUMNS >> FillMissing() >> Clip(min_value=0) >> Normalize()
     features = cat_features + cont_features + LABEL_COLUMNS
 
+    logging.info('Starting workflow fitting')
     workflow = nvt.Workflow(features, client=client)  
     
-    train_paths = [str(path).replace('gs:/', '/gcs') 
-                   for path in Path(dataset.uri, split_name).glob('*.parquet')]
-    print('*****************')
-    print(dataset.uri)
-    print(train_paths)
+    
+    train_paths = [str(path) 
+                   for path in Path(dataset.uri.replace('gs:/', '/gcs'), split_name).glob('*.parquet')]
+    
     train_dataset = nvt.Dataset(train_paths, engine="parquet", part_size=part_size)
     
     workflow.fit(train_dataset)
-    workflow.save(fitted_workflow.uri)
+    workflow_path = fitted_workflow.uri.replace('gs:/', '/gcs')
+    
+    logging.info('Saving workflow to {}'.format(workflow_path))
+    workflow.save(workflow_path)
