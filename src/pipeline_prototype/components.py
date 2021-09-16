@@ -138,6 +138,8 @@ def fit_workflow_op(
     workflow = nvt.Workflow(features, client=client)  
     
     train_paths = [str(path) for path in Path(dataset.uri, split_name).glob('*.parquet')]
+    print('*****************')
+    print(train_paths)
     train_dataset = nvt.Dataset(train_paths, engine="parquet", part_size=part_size)
     
     workflow.fit(train_dataset)
