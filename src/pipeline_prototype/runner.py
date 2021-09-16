@@ -67,7 +67,9 @@ pipeline_job = aiplatform.PipelineJob(
     parameter_values=params,
 )
 
-#pipeline_job.run(
-#    service_account=VERTEX_SA,
-#    sync=False
-#)
+pipeline_job.run(
+    service_account=VERTEX_SA,
+    sync=False
+)
+
+

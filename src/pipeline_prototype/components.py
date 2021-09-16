@@ -130,6 +130,7 @@ def fit_workflow_op(
         client = Client(cluster)
     
     num_buckets = 10000000
+    categorify_op = Categorify(max_size=num_buckets)
     cat_features = CATEGORICAL_COLUMNS >> categorify_op
     cont_features = CONTINUOUS_COLUMNS >> FillMissing() >> Clip(min_value=0) >> Normalize()
     features = cat_features + cont_features + LABEL_COLUMNS
