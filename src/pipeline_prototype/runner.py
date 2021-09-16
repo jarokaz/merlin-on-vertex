@@ -36,10 +36,11 @@ def compile_pipeline(package_path):
        package_path=package_path)
     
     
-def run_pipeline(package_path, parameter_values, vertex_sa):
+def run_pipeline(package_path, parameter_values, job_name, vertex_sa):
+    
     
     pipeline_job = aiplatform.PipelineJob(
-        display_name=JOB_NAME,
+        display_name=job_name,
         template_path=PACKAGE_PATH,
         enable_caching=True,
         parameter_values=parameter_values,
@@ -143,7 +144,12 @@ if __name__ == '__main__':
 
     logging.info(f"Args: {args}")
     
-
+    aiplatform.init(
+        project=args.project,
+        location=args.region,
+        staging_bucket=args.gcs_bucket
+    )
+    
     params = {
         'train_files': json.dumps(args.train_files),
         'valid_files': json.dumps(args.valid_files),
@@ -154,6 +160,6 @@ if __name__ == '__main__':
     
     compile_pipeline(PACKAGE_PATH)
     
-    run_pipeline(PACKAGE_PATH, params, args.vertex_sa)
+    run_pipeline(PACKAGE_PATH, params, 'nvt-pipeline-test', args.vertex_sa)
     
     
