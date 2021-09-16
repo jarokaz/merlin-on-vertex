@@ -19,6 +19,9 @@ import os
 import shutil
 import time
 import warnings
+import logging
+
+from datetime import datetime
 
 try:
     import boto3
@@ -114,6 +117,9 @@ def main(args):
     For a detailed parameter overview see `NVTabular/examples/MultiGPUBench.md`
     """
 
+    logging.info('Starting the job')
+
+
     # Input
     data_path = args.data_path[:-1] if args.data_path[-1] == "/" else args.data_path
     freq_limit = args.freq_limit
@@ -171,6 +177,8 @@ def main(args):
         if used > 1.0:
             warnings.warn(f"BEWARE - {used} GB is already occupied on device {int(dev)}!")
 
+    logging.info('Creating the LocalCUDACluster')
+
     # Setup LocalCUDACluster
     if args.protocol == "tcp":
         cluster = LocalCUDACluster(
@@ -193,6 +201,7 @@ def main(args):
         )
     client = Client(cluster)
 
+    logging.info('Setting up the RMM pool.')
     # Setup RMM pool
     if args.device_pool_frac > 0.01:
         setup_rmm_pool(client, device_pool_size)
@@ -212,13 +221,24 @@ def main(args):
         on_host=not args.cats_on_device,
     )
     processor = Workflow(cat_features + cont_features + label_name, client=client)
+    
+    logging.info(f'Data_path: {data_path}')
 
+    logging.info('Creating Dataset') 
     dataset = Dataset(data_path, "parquet", part_size=part_size)
 
     # Execute the dask graph
     runtime = time.time()
 
+    start_time = time.time()
+    logging.info("Starting fitting the preprocessing workflow on a training dataset")
     processor.fit(dataset)
+    end_time = time.time()
+    fit_elapsed_time = end_time - start_time
+    logging.info('Fitting completed. Elapsed time: {}'.format(fit_elapsed_time))
+
+    start_time = time.time()
+    logging.info("Starting the preprocessing workflow. ")
 
     if args.profile is not None:
         with performance_report(filename=args.profile):
@@ -235,21 +255,29 @@ def main(args):
             shuffle=shuffle,
             out_files_per_proc=out_files_per_proc,
         )
+    end_time = time.time()
+    process_elapsed_time = end_time - start_time
+    logging.info('Processing completed.')
+    
     runtime = time.time() - runtime
 
-    print("\nDask-NVTabular DLRM/Criteo benchmark")
-    print("--------------------------------------")
-    print(f"partition size     | {part_size}")
-    print(f"protocol           | {args.protocol}")
-    print(f"device(s)          | {args.devices}")
-    print(f"rmm-pool-frac      | {(args.device_pool_frac)}")
-    print(f"out-files-per-proc | {args.out_files_per_proc}")
-    print(f"num_io_threads     | {args.num_io_threads}")
-    print(f"shuffle            | {args.shuffle}")
-    print(f"cats-on-device     | {args.cats_on_device}")
-    print("======================================")
-    print(f"Runtime[s]         | {runtime}")
-    print("======================================\n")
+    logging.info("\nDask-NVTabular DLRM/Criteo benchmark")
+    logging.info("--------------------------------------")
+    logging.info(f"partition size     | {part_size}")
+    logging.info(f"protocol           | {args.protocol}")
+    logging.info(f"device(s)          | {args.devices}")
+    logging.info(f"rmm-pool-frac      | {(args.device_pool_frac)}")
+    logging.info(f"out-files-per-proc | {args.out_files_per_proc}")
+    logging.info(f"num_io_threads     | {args.num_io_threads}")
+    logging.info(f"shuffle            | {args.shuffle}")
+    logging.info(f"cats-on-device     | {args.cats_on_device}")
+    logging.info("======================================")
+    logging.info(f"Total runtime[s]       | {runtime}")
+    logging.info("======================================\n")
+    logging.info(f"Fit runtime[s]         | {fit_elapsed_time}")
+    logging.info("======================================\n")
+    logging.info(f"Process runtime[s]     | {process_elapsed_time}")
+    logging.info("======================================\n")
 
     client.close()
 
@@ -411,4 +439,5 @@ def parse_args():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO, datefmt='%d-%m-%y %H:%M:%S')
     main(parse_args())

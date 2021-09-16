@@ -52,9 +52,10 @@ class NvtClusterUtils:
                 device_memory_limit=self.device_limit,
                 local_directory=str(self.local_base_dir),
                 dashboard_address=":" + self.dashboard_port,
+                rmm_pool_size=self.rmm_pool_size
             )
         self.client = Client(cluster)
-        self.setup_rmm_pool()
+        # self.setup_rmm_pool()
 
     def check_device_mem_occupancy(self):
         # Check if any device memory is already occupied
@@ -77,16 +78,8 @@ class NvtClusterUtils:
                    dask_workdir: str = 'dask_workdir', 
                    output_path: str = 'output_path', 
                    stats_path: str = 'stats_path'):
-        if not os.path.isdir(self.local_base_dir):
-            os.mkdir(self.local_base_dir)
-        else:
-            if not os.listdir(self.local_base_dir):
-                for dir_path in (dask_workdir, output_path, stats_path):
-                    if not os.path.isdir(self.local_base_dir/dir_path):
-                        os.mkdir(self.local_base_dir / dir_path)
-                    else:
-                        warnings.warn(f'Path {self.local_base_dir/dir_path} \
-                            exists.')
-            else:
-                warnings.warn(f'Directories not created. They already exist.')
-                warnings.warn(f'Make sure they are empty before proceeding')
+        try:
+            for dir_path in (dask_workdir, output_path, stats_path):
+                os.makedirs(self.local_base_dir / dir_path)
+        except:
+            warnings.warn(f'Dir {self.local_base_dir / dir_path} already exists.')
