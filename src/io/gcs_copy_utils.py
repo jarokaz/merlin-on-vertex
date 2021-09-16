@@ -117,7 +117,7 @@ class GcsCopyUtils:
     def compose_gcloud_upload_cmd(self) -> List[str]:
         '''Composes a gcloud command for the upload operation'''
         gcloud_cmd = ['gcloud', 'alpha', 'storage', 'cp', 
-                            '-r', self.local_download_path, self.gcs_dest]
+                            '-r', self.local_upload_path, self.gcs_dest]
         return gcloud_cmd
 
     def execute_gcloud_cmd(self, gcloud_cmd: List[str]) -> Dict[str,str]:
