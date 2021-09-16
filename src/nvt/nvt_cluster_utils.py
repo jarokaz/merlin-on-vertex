@@ -11,7 +11,6 @@ import numpy as np
 from dask_cuda import LocalCUDACluster
 from dask.distributed import Client
 import rmm
-from google.cloud import storage
 
 # NVTabular
 from nvtabular.utils import _pynvml_mem_size, device_mem_size
@@ -42,7 +41,7 @@ class NvtClusterUtils:
 
         self.rmm_pool_size = (self.device_pool_size // 256) * 256
 
-    def initialize_cluster(self, port: int = None) -> Client:
+    def initialize_cluster(self, port: int = None):
         self.check_device_mem_occupancy()
         cluster = port  # (Optional) Specify existing scheduler port
         if cluster is None:
@@ -53,11 +52,9 @@ class NvtClusterUtils:
                 device_memory_limit=self.device_limit,
                 local_directory=str(self.local_base_dir),
                 dashboard_address=":" + self.dashboard_port,
-                rmm_pool_size=self.rmm_pool_size
             )
-        client = Client(cluster)
-
-        return client
+        self.client = Client(cluster)
+        self.setup_rmm_pool()
 
     def check_device_mem_occupancy(self):
         # Check if any device memory is already occupied
@@ -68,11 +65,11 @@ class NvtClusterUtils:
                 warnings.warn(f'BEWARE - {used} GB is \
                                 already occupied on device {int(dev)}!')
 
-    def setup_rmm_pool(self, client: Client):
+    def setup_rmm_pool(self):
         ''' Initialize an RMM pool allocator.
         Note: RMM may require the pool size to be a multiple of 256.'''
         pool_size = get_rmm_size(self.device_pool_size)
-        client.run(rmm.reinitialize,
+        self.client.run(rmm.reinitialize,
                    pool_allocator=True, 
                    initial_pool_size=pool_size)
             
@@ -82,9 +79,14 @@ class NvtClusterUtils:
                    stats_path: str = 'stats_path'):
         if not os.path.isdir(self.local_base_dir):
             os.mkdir(self.local_base_dir)
-        for dir_path in (dask_workdir, output_path, stats_path):
-            if not os.path.isdir(self.local_base_dir/dir_path):
-                os.mkdir(self.local_base_dir / dir_path)
+        else:
+            if not os.listdir(self.local_base_dir):
+                for dir_path in (dask_workdir, output_path, stats_path):
+                    if not os.path.isdir(self.local_base_dir/dir_path):
+                        os.mkdir(self.local_base_dir / dir_path)
+                    else:
+                        warnings.warn(f'Path {self.local_base_dir/dir_path} \
+                            exists.')
             else:
-                warnings.warn(f'Path {self.local_base_dir/dir_path} \
-                                    already exists!')
+                warnings.warn(f'Directories not created. They already exist.')
+                warnings.warn(f'Make sure they are empty before proceeding')
