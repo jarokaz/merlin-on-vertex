@@ -167,7 +167,7 @@ def convert_csv_to_parquet_op(
         
     # Maybe this can speedup steps transition
     # TODO: Check if this makes any difference.
-    client.close()
+    # client.close()
 
 
 @dsl.component(base_image=BASE_IMAGE_NAME)
@@ -212,6 +212,7 @@ def fit_dataset_op(
     FIT_FOLDER = os.path.join('/gcs', workflow_path, 'fitted_workflow')
 
     # Check if the `split_name` dataset is present
+    logging.info(f'Checking if split {split_name} is present.')
     data_path = datasets.metadata.get(split_name, '')
     if not data_path:
         raise RuntimeError(f'Dataset does not have {split_name} split.')
@@ -253,11 +254,11 @@ def fit_dataset_op(
     workflow.save(FIT_FOLDER)
 
     fitted_workflow.metadata['fitted_workflow'] = FIT_FOLDER
-    fitted_workflow.metadata['datasets'] = datasets
+    fitted_workflow.metadata['datasets'] = datasets.metadata
     
     # Maybe this can speedup steps transition
     # TODO: Check if this makes any difference.
-    client.close()
+    # client.close()
 
 
 @dsl.component(base_image=BASE_IMAGE_NAME)
@@ -365,7 +366,7 @@ def transform_dataset_op(
 
     # Maybe this can speedup steps transition
     # TODO: Check if this makes any difference.
-    client.close()
+    # client.close()
 
 
 @dsl.component(base_image=BASE_IMAGE_NAME)
