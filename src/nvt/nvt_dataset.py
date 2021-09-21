@@ -69,7 +69,7 @@ class NvtDataset:
                 )
         except:
             raise DatasetNotCreated('Dataset not created')
-            
+
         if regen_nvt_dataset:
             self.extension = 'parquet'
             if output_path:
