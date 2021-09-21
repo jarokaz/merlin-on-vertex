@@ -17,7 +17,7 @@ from typing import Optional
 import kfp_components
 from kfp.v2 import dsl
 
-PIPELINE_NAME = 'nvt-test-pipeline-gcs'
+PIPELINE_NAME = 'nvt-pipeline-gcs'
 
 
 @dsl.pipeline(
@@ -46,8 +46,8 @@ def preprocessing_pipeline_gcs(
         sep=sep,
         gpus=gpus,
     )
-    convert_csv_to_parquet.set_cpu_limit("32")
-    convert_csv_to_parquet.set_memory_limit("120G")
+    convert_csv_to_parquet.set_cpu_limit("8")
+    convert_csv_to_parquet.set_memory_limit("32G")
     convert_csv_to_parquet.set_gpu_limit("1")
     convert_csv_to_parquet.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
     
@@ -57,8 +57,8 @@ def preprocessing_pipeline_gcs(
         workflow_path=workflow_path,
         gpus=gpus
     )
-    fit_dataset.set_cpu_limit("32")
-    fit_dataset.set_memory_limit("120G")
+    fit_dataset.set_cpu_limit("8")
+    fit_dataset.set_memory_limit("32G")
     fit_dataset.set_gpu_limit("1")
     fit_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
 
@@ -68,8 +68,8 @@ def preprocessing_pipeline_gcs(
         output_transformed=output_transformed,
         gpus=gpus
     )
-    transform_dataset.set_cpu_limit("32")
-    transform_dataset.set_memory_limit("120G")
+    transform_dataset.set_cpu_limit("8")
+    transform_dataset.set_memory_limit("32G")
     transform_dataset.set_gpu_limit("1")
     transform_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
 

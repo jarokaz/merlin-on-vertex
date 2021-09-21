@@ -1,32 +1,26 @@
 {
   "pipelineSpec": {
     "components": {
-      "comp-convert-csv-to-parquet-op": {
-        "executorLabel": "exec-convert-csv-to-parquet-op",
+      "comp-export-parquet-from-bq-op": {
+        "executorLabel": "exec-export-parquet-from-bq-op",
         "inputDefinitions": {
           "parameters": {
-            "cols_dtype": {
+            "bq_dataset_id": {
               "type": "STRING"
             },
-            "columns": {
+            "bq_project": {
               "type": "STRING"
             },
-            "gpus": {
+            "bq_table_train": {
+              "type": "STRING"
+            },
+            "bq_table_valid": {
+              "type": "STRING"
+            },
+            "location": {
               "type": "STRING"
             },
             "output_path": {
-              "type": "STRING"
-            },
-            "recursive": {
-              "type": "STRING"
-            },
-            "sep": {
-              "type": "STRING"
-            },
-            "train_paths": {
-              "type": "STRING"
-            },
-            "valid_paths": {
               "type": "STRING"
             }
           }
@@ -137,13 +131,13 @@
     },
     "deploymentSpec": {
       "executors": {
-        "exec-convert-csv-to-parquet-op": {
+        "exec-export-parquet-from-bq-op": {
           "container": {
             "args": [
               "--executor_input",
               "{{$}}",
               "--function_to_execute",
-              "convert_csv_to_parquet_op"
+              "export_parquet_from_bq_op"
             ],
             "command": [
               "sh",
@@ -152,14 +146,10 @@
               "sh",
               "-ec",
               "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.v2.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
-              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef convert_csv_to_parquet_op(\n    output_datasets: Output[Dataset],\n    train_paths: list,\n    valid_paths: list,\n    output_path: str,\n    columns: list,\n    cols_dtype: list,\n    sep: str,\n    gpus: str,\n    shuffle: Optional[str] = None,\n    recursive: Optional[bool] = False\n):\n    '''\n    train_paths: list\n        List of paths to folders or files in GCS for training.\n        For recursive folder search, set the recursive variable to True\n        Format:\n            '<bucket_name>/<subfolder1>/<subfolder>/' or\n            '<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or\n            a combination of both.\n    valid_paths: list\n        List of paths to folders or files in GCS for validation\n        For recursive folder search, set the recursive variable to True\n        Format:\n            '<bucket_name>/<subfolder1>/<subfolder>/' or\n            '<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or\n            a combination of both.\n    output_path: str\n        Path to write the converted parquet files\n        Format:\n            '<bucket_name>/<subfolder1>/<subfolder>/'\n    gpus: str\n        GPUs available. Example:\n            If there are 4 gpus available, must be '0,1,2,3'\n    output_datasets: dict\n        Metadata pointing to the converted dataset\n        Format:\n            output_datasets.metadata['train'] = \\\n                '<bucket_name>/<subfolder1>/<subfolder>/'\n    shuffle: str\n        How to shuffle the converted data, default to None.\n        Options:\n            PER_PARTITION\n            PER_WORKER\n            FULL\n    '''\n\n    # Standard Libraries\n    import logging\n    from pathlib import Path\n    import fsspec\n    import os\n\n    # External Dependencies\n    from dask_cuda import LocalCUDACluster\n    from dask.distributed import Client\n    import numpy as np\n\n    # NVTabular\n    from nvtabular.utils import device_mem_size, get_rmm_size\n    import nvtabular as nvt\n    from nvtabular.io.shuffle import Shuffle\n\n    logging.basicConfig(level=logging.INFO)\n\n    # Specify column dtypes (from numpy). Note that 'hex' means that\n    # the values will be hexadecimal strings that should be converted to int32\n    logging.info('Converting columns dtypes to numpy objects')\n    converted_col_dtype = {}\n    for col, dt in cols_dtype.items():\n        if dt == 'hex':\n            converted_col_dtype[col] = 'hex'\n        else:\n            converted_col_dtype[col] = getattr(np, dt)\n\n    fs_spec = fsspec.filesystem('gs')\n    rec_symbol = '**' if recursive else '*'\n    TRAIN_SPLIT_FOLDER = 'train'\n    VALID_SPLIT_FOLDER = 'valid'\n\n    if gpus:\n        logging.info('Creating a Dask CUDA cluster')\n        cluster = LocalCUDACluster(\n                    n_workers=len(gpus.split(sep=',')),\n                    CUDA_VISIBLE_DEVICES=gpus,\n                    rmm_pool_size=get_rmm_size(0.8 * device_mem_size())\n        )\n        client = Client(cluster)\n    else:\n        raise Exception('Cannot create Cluster. \\\n                    Provide a list of available GPUs')\n\n    for folder_name, data_paths in zip(\n        [TRAIN_SPLIT_FOLDER, VALID_SPLIT_FOLDER], \n        [train_paths, valid_paths]\n    ):\n        valid_paths = []\n        for path in data_paths:\n            try:\n                if fs_spec.isfile(path):\n                    valid_paths.append(os.path.join('/gcs', path))\n                else:\n                    path = os.path.join(path, rec_symbol)\n                    for i in fs_spec.glob(path):\n                        if fs_spec.isfile(i):\n                            valid_paths.append(os.path.join('/gcs', i))\n            except FileNotFoundError as fnf_expt:\n                print(fnf_expt)\n                print('One of the paths provided are incorrect.')\n            except OSError as os_err:\n                print(os_err)\n                print(f'Verify access to the bucket.')\n\n        dataset = nvt.Dataset(\n            path_or_source = valid_paths,\n            engine='csv',\n            names=columns,\n            sep=sep,\n            dtypes=converted_col_dtype,\n            client=client\n        )\n\n        full_output_path = os.path.join('/gcs', output_path, folder_name)\n\n        logging.info(f'Writing parquet file(s) to {full_output_path}')\n        if shuffle:\n            shuffle = getattr(Shuffle, shuffle)\n\n        dataset.to_parquet(\n            full_output_path,\n            preserve_files=True,\n            shuffle=shuffle\n        )\n        output_datasets.metadata[folder_name] = full_output_path\n\n    # Maybe this can speedup steps transition\n    # TODO: Check if this makes any difference.\n    client.close()\n\n"
+              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef export_parquet_from_bq_op(\n    output_datasets: Output[Dataset],\n    output_path: str,\n    bq_project: str,\n    bq_dataset_id: str,\n    bq_table_train: str,\n    bq_table_valid: str,\n    location: str\n):\n    '''\n    output_path: str\n        Path to write the exported parquet files\n        Format:\n            'gs://<bucket_name>/<subfolder1>/<subfolder>/'\n    bq_project: str\n        GCP project id\n    bq_dataset_id: str\n        Bigquery dataset id\n    bq_table_train: str\n        Bigquery table name for training dataset\n    bq_table_valid: str\n        BigQuery table name for validation dataset\n    output_datasets: dict\n        Output metadata for the next step. Stores the path in GCS\n        for the datasets.\n        Usage:\n            train_path = output_datasets.metadata['train']\n            # returns: bucket_name/subfolder/subfolder/\n    '''\n\n    import logging\n    import os\n    from google.cloud import bigquery\n\n    logging.basicConfig(level=logging.INFO)\n\n    TRAIN_SPLIT_FOLDER = 'train'\n    VALID_SPLIT_FOLDER = 'valid'\n\n    client = bigquery.Client()\n    dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_id)\n\n    for folder_name, table_id in zip(\n        [TRAIN_SPLIT_FOLDER, VALID_SPLIT_FOLDER], \n        [bq_table_train, bq_table_valid]\n    ):\n        bq_glob_path = os.path.join(\n            'gs://',\n            output_path,\n            folder_name,\n            f'{folder_name}-*.parquet'\n        )\n        table_ref = dataset_ref.table(table_id)\n\n        logging.info(f'Extracting {table_ref} to {bq_glob_path}')\n        client.extract_table(table_ref, bq_glob_path, location=location)\n\n        full_output_path = os.path.join('/gcs', output_path, folder_name)\n        logging.info(\n            f'Saving metadata for {folder_name} path: {full_output_path}'\n        )\n        output_datasets.metadata[folder_name] = full_output_path\n\n    logging.info('Finished exporting to GCS.')\n\n"
             ],
             "image": "us-east1-docker.pkg.dev/renatoleite-mldemos/docker-images/nvt-conda",
             "resources": {
-              "accelerator": {
-                "count": "1",
-                "type": "NVIDIA_TESLA_T4"
-              },
               "cpuLimit": 8.0,
               "memoryLimit": 32.0
             }
@@ -180,7 +170,7 @@
               "sh",
               "-ec",
               "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.v2.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
-              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef fit_dataset_op(\n    datasets: Input[Dataset],\n    fitted_workflow: Output[Artifact],\n    workflow_path: str,\n    gpus: str,\n    split_name: Optional[str] = 'train',\n    protocol: Optional[str] = 'tcp',\n    device_limit_frac: Optional[float] = 0.8,\n    device_pool_frac: Optional[float] = 0.9,\n    part_mem_frac: Optional[float] = 0.125\n):\n    '''\n    datasets: dict\n        Input metadata from previus step. Stores the full path of the \n        converted datasets.\n        How to access:\n            full_path = datasets.metadata.get('train')\n    fitted_workflow: dict\n        Output metadata for next step. Stores the full path of the \n        converted dataset, and saved workflow with statistics.\n    workflow_path: str\n        Path to the current workflow, not fitted.\n        Format:\n            '<bucket_name>/<subfolder1>/<subfolder>/'\n    split_name: str\n        Which dataset to calculate the statistics. 'train' or 'valid'\n    '''\n\n    import logging\n    import nvtabular as nvt\n    import os\n\n    from dask_cuda import LocalCUDACluster\n    from dask.distributed import Client\n    from nvtabular.utils import device_mem_size\n\n    logging.basicConfig(level=logging.INFO)\n\n    FIT_FOLDER = os.path.join('/gcs', workflow_path, 'fitted_workflow')\n\n    # Check if the `split_name` dataset is present\n    logging.info(f'Checking if split {split_name} is present.')\n    data_path = datasets.metadata.get(split_name, '')\n    if not data_path:\n        raise RuntimeError(f'Dataset does not have {split_name} split.')\n\n    # Dask Cluster defintions\n    device_size = device_mem_size()\n    device_limit = int(device_limit_frac * device_size)\n    device_pool_size = int(device_pool_frac * device_size)\n    part_size = int(part_mem_frac * device_size)\n    rmm_pool_size = (device_pool_size // 256) * 256\n\n    if gpus:\n        logging.info('Creating a Dask CUDA cluster')\n        cluster = LocalCUDACluster(\n            protocol=protocol,\n            n_workers=len(gpus.split(sep=',')),\n            CUDA_VISIBLE_DEVICES=gpus,\n            device_memory_limit=device_limit,\n            rmm_pool_size=rmm_pool_size\n        )\n        client = Client(cluster)\n    else:\n        raise Exception('Cannot create Cluster. \\\n                            Provide a list of available GPUs')\n\n    # Load Transformation steps\n    full_workflow_path = os.path.join('/gcs', workflow_path)\n\n    logging.info('Loading saved workflow')\n    workflow = nvt.Workflow.load(full_workflow_path, client)\n    fitted_dataset = nvt.Dataset(\n        data_path, engine=\"parquet\", part_size=part_size\n    )\n    logging.info('Starting workflow fitting')\n    workflow.fit(fitted_dataset)\n    logging.info('Finished generating statistics for dataset.')\n\n    logging.info(f'Saving workflow to {FIT_FOLDER}')\n    workflow.save(FIT_FOLDER)\n\n    fitted_workflow.metadata['fitted_workflow'] = FIT_FOLDER\n    fitted_workflow.metadata['datasets'] = datasets.metadata\n\n    # Maybe this can speedup steps transition\n    # TODO: Check if this makes any difference.\n    client.close()\n\n"
+              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef fit_dataset_op(\n    datasets: Input[Dataset],\n    fitted_workflow: Output[Artifact],\n    workflow_path: str,\n    gpus: str,\n    split_name: Optional[str] = 'train',\n    protocol: Optional[str] = 'tcp',\n    device_limit_frac: Optional[float] = 0.8,\n    device_pool_frac: Optional[float] = 0.9,\n    part_mem_frac: Optional[float] = 0.125\n):\n    '''\n    datasets: dict\n        Input metadata from previus step. Stores the full path of the \n        converted datasets.\n        How to access:\n            full_path = datasets.metadata.get('train')\n    fitted_workflow: dict\n        Output metadata for next step. Stores the full path of the \n        converted dataset, and saved workflow with statistics.\n    workflow_path: str\n        Path to the current workflow, not fitted.\n        Format:\n            '<bucket_name>/<subfolder1>/<subfolder>/'\n    split_name: str\n        Which dataset to calculate the statistics. 'train' or 'valid'\n    '''\n\n    import logging\n    import nvtabular as nvt\n    import os\n\n    from dask_cuda import LocalCUDACluster\n    from dask.distributed import Client\n    from nvtabular.utils import device_mem_size\n\n    logging.basicConfig(level=logging.INFO)\n\n    FIT_FOLDER = os.path.join('/gcs', workflow_path, 'fitted_workflow')\n\n    # Check if the `split_name` dataset is present\n    logging.info(f'Checking if split {split_name} is present.')\n    data_path = datasets.metadata.get(split_name, '')\n    if not data_path:\n        raise RuntimeError(f'Dataset does not have {split_name} split.')\n\n    # Dask Cluster defintions\n    device_size = device_mem_size()\n    device_limit = int(device_limit_frac * device_size)\n    device_pool_size = int(device_pool_frac * device_size)\n    part_size = int(part_mem_frac * device_size)\n    rmm_pool_size = (device_pool_size // 256) * 256\n\n    if gpus:\n        logging.info('Creating a Dask CUDA cluster')\n        cluster = LocalCUDACluster(\n            protocol=protocol,\n            n_workers=len(gpus.split(sep=',')),\n            CUDA_VISIBLE_DEVICES=gpus,\n            device_memory_limit=device_limit,\n            rmm_pool_size=rmm_pool_size\n        )\n        client = Client(cluster)\n    else:\n        raise Exception('Cannot create Cluster. \\\n                            Provide a list of available GPUs')\n\n    # Load Transformation steps\n    full_workflow_path = os.path.join('/gcs', workflow_path)\n\n    logging.info('Loading saved workflow')\n    workflow = nvt.Workflow.load(full_workflow_path, client)\n    fitted_dataset = nvt.Dataset(\n        data_path, engine=\"parquet\", part_size=part_size\n    )\n    logging.info('Starting workflow fitting')\n    workflow.fit(fitted_dataset)\n    logging.info('Finished generating statistics for dataset.')\n\n    logging.info(f'Saving workflow to {FIT_FOLDER}')\n    workflow.save(FIT_FOLDER)\n\n    fitted_workflow.metadata['fitted_workflow'] = FIT_FOLDER\n    fitted_workflow.metadata['datasets'] = datasets.metadata\n\n"
             ],
             "image": "us-east1-docker.pkg.dev/renatoleite-mldemos/docker-images/nvt-conda",
             "resources": {
@@ -224,52 +214,42 @@
       }
     },
     "pipelineInfo": {
-      "name": "nvt-pipeline-gcs"
+      "name": "nvt-pipeline-bq"
     },
     "root": {
       "dag": {
         "tasks": {
-          "convert-csv-to-parquet-op": {
+          "export-parquet-from-bq-op": {
             "cachingOptions": {
               "enableCache": true
             },
             "componentRef": {
-              "name": "comp-convert-csv-to-parquet-op"
+              "name": "comp-export-parquet-from-bq-op"
             },
             "inputs": {
               "parameters": {
-                "cols_dtype": {
-                  "componentInputParameter": "cols_dtype"
+                "bq_dataset_id": {
+                  "componentInputParameter": "bq_dataset_id"
                 },
-                "columns": {
-                  "componentInputParameter": "columns"
+                "bq_project": {
+                  "componentInputParameter": "bq_project"
                 },
-                "gpus": {
-                  "componentInputParameter": "gpus"
+                "bq_table_train": {
+                  "componentInputParameter": "bq_table_train"
+                },
+                "bq_table_valid": {
+                  "componentInputParameter": "bq_table_valid"
+                },
+                "location": {
+                  "componentInputParameter": "location"
                 },
                 "output_path": {
                   "componentInputParameter": "output_path"
-                },
-                "recursive": {
-                  "runtimeValue": {
-                    "constantValue": {
-                      "stringValue": "False"
-                    }
-                  }
-                },
-                "sep": {
-                  "componentInputParameter": "sep"
-                },
-                "train_paths": {
-                  "componentInputParameter": "train_paths"
-                },
-                "valid_paths": {
-                  "componentInputParameter": "valid_paths"
                 }
               }
             },
             "taskInfo": {
-              "name": "convert-csv-to-parquet-op"
+              "name": "export-parquet-from-bq-op"
             }
           },
           "fit-dataset-op": {
@@ -280,14 +260,14 @@
               "name": "comp-fit-dataset-op"
             },
             "dependentTasks": [
-              "convert-csv-to-parquet-op"
+              "export-parquet-from-bq-op"
             ],
             "inputs": {
               "artifacts": {
                 "datasets": {
                   "taskOutputArtifact": {
                     "outputArtifactKey": "output_datasets",
-                    "producerTask": "convert-csv-to-parquet-op"
+                    "producerTask": "export-parquet-from-bq-op"
                   }
                 }
               },
@@ -410,13 +390,22 @@
       },
       "inputDefinitions": {
         "parameters": {
-          "cols_dtype": {
+          "bq_dataset_id": {
             "type": "STRING"
           },
-          "columns": {
+          "bq_project": {
+            "type": "STRING"
+          },
+          "bq_table_train": {
+            "type": "STRING"
+          },
+          "bq_table_valid": {
             "type": "STRING"
           },
           "gpus": {
+            "type": "STRING"
+          },
+          "location": {
             "type": "STRING"
           },
           "output_path": {
@@ -428,16 +417,7 @@
           "recursive": {
             "type": "STRING"
           },
-          "sep": {
-            "type": "STRING"
-          },
           "shuffle": {
-            "type": "STRING"
-          },
-          "train_paths": {
-            "type": "STRING"
-          },
-          "valid_paths": {
             "type": "STRING"
           },
           "workflow_path": {

@@ -17,39 +17,36 @@ from typing import Optional
 import kfp_components
 from kfp.v2 import dsl
 
-PIPELINE_NAME = 'nvt-test-pipeline-bq'
+PIPELINE_NAME = 'nvt-pipeline-bq'
 
 
 @dsl.pipeline(
     name=PIPELINE_NAME
 )
 def preprocessing_pipeline_bq(
-    train_paths: list,
-    valid_paths: list,
+    bq_table_train: str,
+    bq_table_valid: str,
     output_path: str,
-    columns: list,
-    cols_dtype: list,
-    sep: str,
+    bq_project: str,
+    bq_dataset_id: str,
+    location: str,
     gpus: str,
     workflow_path: str,
     output_transformed: str,
-    shuffle: Optional[str],
-    recursive: Optional[bool]
+    shuffle: str,
+    recursive: bool
 ):
     # === Convert CSV to Parquet
     export_parquet_from_bq = kfp_components.export_parquet_from_bq_op(
-        train_paths=train_paths,
-        valid_paths=valid_paths,
+        bq_table_train=bq_table_train,
+        bq_table_valid=bq_table_valid,
         output_path=output_path,
-        columns=columns,
-        cols_dtype=cols_dtype,
-        sep=sep,
-        gpus=gpus,
+        bq_project=bq_project,
+        bq_dataset_id=bq_dataset_id,
+        location=location
     )
-    export_parquet_from_bq.set_cpu_limit("32")
-    export_parquet_from_bq.set_memory_limit("120G")
-    export_parquet_from_bq.set_gpu_limit("4")
-    export_parquet_from_bq.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
+    export_parquet_from_bq.set_cpu_limit("8")
+    export_parquet_from_bq.set_memory_limit("32G")
     
     # === Fit dataset
     fit_dataset = kfp_components.fit_dataset_op(
@@ -57,9 +54,9 @@ def preprocessing_pipeline_bq(
         workflow_path=workflow_path,
         gpus=gpus
     )
-    fit_dataset.set_cpu_limit("32")
-    fit_dataset.set_memory_limit("120G")
-    fit_dataset.set_gpu_limit("4")
+    fit_dataset.set_cpu_limit("8")
+    fit_dataset.set_memory_limit("32G")
+    fit_dataset.set_gpu_limit("1")
     fit_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
 
     # === Transform dataset
@@ -68,9 +65,7 @@ def preprocessing_pipeline_bq(
         output_transformed=output_transformed,
         gpus=gpus
     )
-    fit_dataset.set_cpu_limit("32")
-    fit_dataset.set_memory_limit("120G")
-    fit_dataset.set_gpu_limit("4")
-    fit_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
-
-    
+    transform_dataset.set_cpu_limit("8")
+    transform_dataset.set_memory_limit("32G")
+    transform_dataset.set_gpu_limit("1")
+    transform_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')

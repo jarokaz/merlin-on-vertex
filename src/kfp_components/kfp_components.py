@@ -366,7 +366,7 @@ def transform_dataset_op(
 
     # Maybe this can speedup steps transition
     # TODO: Check if this makes any difference.
-    # client.close()
+    client.close()
 
 
 @dsl.component(base_image=BASE_IMAGE_NAME)
