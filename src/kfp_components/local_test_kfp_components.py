@@ -417,5 +417,54 @@ def export_parquet_from_bq_op(
     return output_dataset
 
 
+def import_parquet_to_bq_op(
+    transformed_dataset: dict, #Input[Dataset],
+    bq_project: str,
+    bq_dataset_id: str,
+    bq_dest_table_id: str,
+    location: str
+):
+    '''
+    transformed_dataset: dict
+        Input metadata. Stores the path in GCS
+        for the datasets.
+        Usage:
+            train_path = output_dataset['train']
+            # returns: bucket_name/subfolder/subfolder/
+    bq_project: str
+        GCP project id
+    bq_dataset_id: str
+        Bigquery dataset id
+    bq_dest_table_id: str
+        Bigquery destination table name
+    '''
+
+    # Standard Libraries
+    import logging
+    import os
+    from google.cloud import bigquery
+
+    logging.basicConfig(level=logging.INFO)
+
+    transformed_dataset['transformed_dataset']
+    
+    # Construct a BigQuery client object.
+    client = bigquery.Client()
+    table_id = '.'.join([bq_project, bq_dataset_id, bq_dest_table_id])
+
+    job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.PARQUET,)
+    uri = "gs://cloud-samples-data/bigquery/us-states/us-states.parquet"
+
+    load_job = client.load_table_from_uri(
+        uri, table_id, job_config=job_config
+    )  # Make an API request.
+
+    load_job.result()  # Waits for the job to complete.
+
+    destination_table = client.get_table(table_id)
+    print("Loaded {} rows.".format(destination_table.num_rows))
+    # [END bigquery_load_table_gcs_parquet]
+
+
 def load_features_feature_store_op():
     pass

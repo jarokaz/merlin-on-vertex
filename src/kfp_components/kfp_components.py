@@ -164,10 +164,6 @@ def convert_csv_to_parquet_op(
             shuffle=shuffle
         )
         output_datasets.metadata[folder_name] = full_output_path
-        
-    # Maybe this can speedup steps transition
-    # TODO: Check if this makes any difference.
-    # client.close()
 
 
 @dsl.component(base_image=BASE_IMAGE_NAME)
@@ -255,10 +251,6 @@ def fit_dataset_op(
 
     fitted_workflow.metadata['fitted_workflow'] = FIT_FOLDER
     fitted_workflow.metadata['datasets'] = datasets.metadata
-    
-    # Maybe this can speedup steps transition
-    # TODO: Check if this makes any difference.
-    # client.close()
 
 
 @dsl.component(base_image=BASE_IMAGE_NAME)
@@ -363,10 +355,6 @@ def transform_dataset_op(
     transformed_dataset.metadata['transformed_dataset'] = TRANSFORM_FOLDER
     transformed_dataset.metadata['original_datasets'] = \
         fitted_workflow.metadata.get('datasets')
-
-    # Maybe this can speedup steps transition
-    # TODO: Check if this makes any difference.
-    client.close()
 
 
 @dsl.component(base_image=BASE_IMAGE_NAME)
