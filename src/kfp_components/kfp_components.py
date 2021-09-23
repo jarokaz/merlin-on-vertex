@@ -397,7 +397,10 @@ def export_parquet_from_bq_op(
     TRAIN_SPLIT_FOLDER = 'train'
     VALID_SPLIT_FOLDER = 'valid'
 
-    client = bigquery.Client()
+    extract_job_config = bigquery.ExtractJobConfig()
+    extract_job_config.destination_format = 'PARQUET'
+
+    client = bigquery.Client(project=bq_project)
     dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_id)
 
     for folder_name, table_id in zip(
@@ -413,8 +416,14 @@ def export_parquet_from_bq_op(
         table_ref = dataset_ref.table(table_id)
 
         logging.info(f'Extracting {table_ref} to {bq_glob_path}')
-        client.extract_table(table_ref, bq_glob_path, location=location)
-
+        extract_job = client.extract_table(
+            table_ref, 
+            bq_glob_path, 
+            location=location,
+            job_config=extract_job_config
+        )
+        extract_job.result()
+        
         full_output_path = os.path.join('/gcs', output_path, folder_name)
         logging.info(
             f'Saving metadata for {folder_name} path: {full_output_path}'
@@ -422,3 +431,66 @@ def export_parquet_from_bq_op(
         output_datasets.metadata[folder_name] = full_output_path
     
     logging.info('Finished exporting to GCS.')
+
+
+@dsl.component(base_image=BASE_IMAGE_NAME)
+def import_parquet_to_bq_op(
+    transformed_dataset: Input[Dataset],
+    output_bq_table: Output[Dataset],
+    bq_project: str,
+    bq_dataset_id: str,
+    bq_dest_table_id: str
+):
+    '''
+    transformed_dataset: dict
+        Input metadata. Stores the path in GCS
+        for the datasets.
+        Usage:
+            train_path = output_dataset['train']
+            # returns: bucket_name/subfolder/subfolder/
+    bq_project: str
+        GCP project id
+    bq_dataset_id: str
+        Bigquery dataset id
+    bq_dest_table_id: str
+        Bigquery destination table name
+    '''
+
+    # Standard Libraries
+    import logging
+    import os
+    from google.cloud import bigquery
+
+    logging.basicConfig(level=logging.INFO)
+
+    data_path = transformed_dataset.metadata['transformed_dataset'][5:]
+    full_data_path = os.path.join('gs://', data_path, '*.parquet')
+    
+    # Construct a BigQuery client object.
+    client = bigquery.Client(project=bq_project)
+    table_id = '.'.join([bq_project, bq_dataset_id, bq_dest_table_id])
+
+    job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.PARQUET)
+
+    load_job = client.load_table_from_uri(
+        full_data_path, table_id, job_config=job_config
+    )  # Make an API request.
+
+    load_job.result()  # Waits for the job to complete.
+
+    output_bq_table.metadata['bq_project'] = bq_project
+    output_bq_table.metadata['bq_dataset_id'] = bq_dataset_id
+    output_bq_table.metadata['bq_dest_table_id'] = bq_dest_table_id
+    output_bq_table.metadata['dataset_path'] = data_path
+
+
+@dsl.component(base_image=BASE_IMAGE_NAME)
+def load_bq_to_feature_store(
+    transformed_dataset: Input[Dataset],
+    output_bq_table: Output[Dataset],
+    bq_project: str,
+    bq_dataset_id: str,
+    bq_dest_table_id: str
+):
+    
+    pass

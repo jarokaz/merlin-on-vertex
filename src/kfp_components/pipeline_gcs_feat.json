@@ -1,26 +1,32 @@
 {
   "pipelineSpec": {
     "components": {
-      "comp-export-parquet-from-bq-op": {
-        "executorLabel": "exec-export-parquet-from-bq-op",
+      "comp-convert-csv-to-parquet-op": {
+        "executorLabel": "exec-convert-csv-to-parquet-op",
         "inputDefinitions": {
           "parameters": {
-            "bq_dataset_id": {
+            "cols_dtype": {
               "type": "STRING"
             },
-            "bq_project": {
+            "columns": {
               "type": "STRING"
             },
-            "bq_table_train": {
-              "type": "STRING"
-            },
-            "bq_table_valid": {
-              "type": "STRING"
-            },
-            "location": {
+            "gpus": {
               "type": "STRING"
             },
             "output_path": {
+              "type": "STRING"
+            },
+            "recursive": {
+              "type": "STRING"
+            },
+            "sep": {
+              "type": "STRING"
+            },
+            "train_paths": {
+              "type": "STRING"
+            },
+            "valid_paths": {
               "type": "STRING"
             }
           }
@@ -82,6 +88,40 @@
           }
         }
       },
+      "comp-import-parquet-to-bq-op": {
+        "executorLabel": "exec-import-parquet-to-bq-op",
+        "inputDefinitions": {
+          "artifacts": {
+            "transformed_dataset": {
+              "artifactType": {
+                "schemaTitle": "system.Dataset",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          },
+          "parameters": {
+            "bq_dataset_id": {
+              "type": "STRING"
+            },
+            "bq_dest_table_id": {
+              "type": "STRING"
+            },
+            "bq_project": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "artifacts": {
+            "output_bq_table": {
+              "artifactType": {
+                "schemaTitle": "system.Dataset",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          }
+        }
+      },
       "comp-transform-dataset-op": {
         "executorLabel": "exec-transform-dataset-op",
         "inputDefinitions": {
@@ -131,13 +171,13 @@
     },
     "deploymentSpec": {
       "executors": {
-        "exec-export-parquet-from-bq-op": {
+        "exec-convert-csv-to-parquet-op": {
           "container": {
             "args": [
               "--executor_input",
               "{{$}}",
               "--function_to_execute",
-              "export_parquet_from_bq_op"
+              "convert_csv_to_parquet_op"
             ],
             "command": [
               "sh",
@@ -146,10 +186,14 @@
               "sh",
               "-ec",
               "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.v2.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
-              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef export_parquet_from_bq_op(\n    output_datasets: Output[Dataset],\n    output_path: str,\n    bq_project: str,\n    bq_dataset_id: str,\n    bq_table_train: str,\n    bq_table_valid: str,\n    location: str\n):\n    '''\n    output_path: str\n        Path to write the exported parquet files\n        Format:\n            'gs://<bucket_name>/<subfolder1>/<subfolder>/'\n    bq_project: str\n        GCP project id\n    bq_dataset_id: str\n        Bigquery dataset id\n    bq_table_train: str\n        Bigquery table name for training dataset\n    bq_table_valid: str\n        BigQuery table name for validation dataset\n    output_datasets: dict\n        Output metadata for the next step. Stores the path in GCS\n        for the datasets.\n        Usage:\n            train_path = output_datasets.metadata['train']\n            # returns: bucket_name/subfolder/subfolder/\n    '''\n\n    import logging\n    import os\n    from google.cloud import bigquery\n\n    logging.basicConfig(level=logging.INFO)\n\n    TRAIN_SPLIT_FOLDER = 'train'\n    VALID_SPLIT_FOLDER = 'valid'\n\n    extract_job_config = bigquery.ExtractJobConfig()\n    extract_job_config.destination_format = 'PARQUET'\n\n    client = bigquery.Client(project=bq_project)\n    dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_id)\n\n    for folder_name, table_id in zip(\n        [TRAIN_SPLIT_FOLDER, VALID_SPLIT_FOLDER], \n        [bq_table_train, bq_table_valid]\n    ):\n        bq_glob_path = os.path.join(\n            'gs://',\n            output_path,\n            folder_name,\n            f'{folder_name}-*.parquet'\n        )\n        table_ref = dataset_ref.table(table_id)\n\n        logging.info(f'Extracting {table_ref} to {bq_glob_path}')\n        extract_job = client.extract_table(\n            table_ref, \n            bq_glob_path, \n            location=location,\n            job_config=extract_job_config\n        )\n        extract_job.result()\n\n        full_output_path = os.path.join('/gcs', output_path, folder_name)\n        logging.info(\n            f'Saving metadata for {folder_name} path: {full_output_path}'\n        )\n        output_datasets.metadata[folder_name] = full_output_path\n\n    logging.info('Finished exporting to GCS.')\n\n"
+              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef convert_csv_to_parquet_op(\n    output_datasets: Output[Dataset],\n    train_paths: list,\n    valid_paths: list,\n    output_path: str,\n    columns: list,\n    cols_dtype: list,\n    sep: str,\n    gpus: str,\n    shuffle: Optional[str] = None,\n    recursive: Optional[bool] = False\n):\n    '''\n    train_paths: list\n        List of paths to folders or files in GCS for training.\n        For recursive folder search, set the recursive variable to True\n        Format:\n            '<bucket_name>/<subfolder1>/<subfolder>/' or\n            '<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or\n            a combination of both.\n    valid_paths: list\n        List of paths to folders or files in GCS for validation\n        For recursive folder search, set the recursive variable to True\n        Format:\n            '<bucket_name>/<subfolder1>/<subfolder>/' or\n            '<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or\n            a combination of both.\n    output_path: str\n        Path to write the converted parquet files\n        Format:\n            '<bucket_name>/<subfolder1>/<subfolder>/'\n    gpus: str\n        GPUs available. Example:\n            If there are 4 gpus available, must be '0,1,2,3'\n    output_datasets: dict\n        Metadata pointing to the converted dataset\n        Format:\n            output_datasets.metadata['train'] = \\\n                '<bucket_name>/<subfolder1>/<subfolder>/'\n    shuffle: str\n        How to shuffle the converted data, default to None.\n        Options:\n            PER_PARTITION\n            PER_WORKER\n            FULL\n    '''\n\n    # Standard Libraries\n    import logging\n    from pathlib import Path\n    import fsspec\n    import os\n\n    # External Dependencies\n    from dask_cuda import LocalCUDACluster\n    from dask.distributed import Client\n    import numpy as np\n\n    # NVTabular\n    from nvtabular.utils import device_mem_size, get_rmm_size\n    import nvtabular as nvt\n    from nvtabular.io.shuffle import Shuffle\n\n    logging.basicConfig(level=logging.INFO)\n\n    # Specify column dtypes (from numpy). Note that 'hex' means that\n    # the values will be hexadecimal strings that should be converted to int32\n    logging.info('Converting columns dtypes to numpy objects')\n    converted_col_dtype = {}\n    for col, dt in cols_dtype.items():\n        if dt == 'hex':\n            converted_col_dtype[col] = 'hex'\n        else:\n            converted_col_dtype[col] = getattr(np, dt)\n\n    fs_spec = fsspec.filesystem('gs')\n    rec_symbol = '**' if recursive else '*'\n    TRAIN_SPLIT_FOLDER = 'train'\n    VALID_SPLIT_FOLDER = 'valid'\n\n    if gpus:\n        logging.info('Creating a Dask CUDA cluster')\n        cluster = LocalCUDACluster(\n                    n_workers=len(gpus.split(sep=',')),\n                    CUDA_VISIBLE_DEVICES=gpus,\n                    rmm_pool_size=get_rmm_size(0.8 * device_mem_size())\n        )\n        client = Client(cluster)\n    else:\n        raise Exception('Cannot create Cluster. \\\n                    Provide a list of available GPUs')\n\n    for folder_name, data_paths in zip(\n        [TRAIN_SPLIT_FOLDER, VALID_SPLIT_FOLDER], \n        [train_paths, valid_paths]\n    ):\n        valid_paths = []\n        for path in data_paths:\n            try:\n                if fs_spec.isfile(path):\n                    valid_paths.append(os.path.join('/gcs', path))\n                else:\n                    path = os.path.join(path, rec_symbol)\n                    for i in fs_spec.glob(path):\n                        if fs_spec.isfile(i):\n                            valid_paths.append(os.path.join('/gcs', i))\n            except FileNotFoundError as fnf_expt:\n                print(fnf_expt)\n                print('One of the paths provided are incorrect.')\n            except OSError as os_err:\n                print(os_err)\n                print(f'Verify access to the bucket.')\n\n        dataset = nvt.Dataset(\n            path_or_source = valid_paths,\n            engine='csv',\n            names=columns,\n            sep=sep,\n            dtypes=converted_col_dtype,\n            client=client\n        )\n\n        full_output_path = os.path.join('/gcs', output_path, folder_name)\n\n        logging.info(f'Writing parquet file(s) to {full_output_path}')\n        if shuffle:\n            shuffle = getattr(Shuffle, shuffle)\n\n        dataset.to_parquet(\n            full_output_path,\n            preserve_files=True,\n            shuffle=shuffle\n        )\n        output_datasets.metadata[folder_name] = full_output_path\n\n"
             ],
             "image": "us-east1-docker.pkg.dev/renatoleite-mldemos/docker-images/nvt-conda",
             "resources": {
+              "accelerator": {
+                "count": "1",
+                "type": "NVIDIA_TESLA_T4"
+              },
               "cpuLimit": 8.0,
               "memoryLimit": 32.0
             }
@@ -178,6 +222,30 @@
                 "count": "1",
                 "type": "NVIDIA_TESLA_T4"
               },
+              "cpuLimit": 8.0,
+              "memoryLimit": 32.0
+            }
+          }
+        },
+        "exec-import-parquet-to-bq-op": {
+          "container": {
+            "args": [
+              "--executor_input",
+              "{{$}}",
+              "--function_to_execute",
+              "import_parquet_to_bq_op"
+            ],
+            "command": [
+              "sh",
+              "-c",
+              "(python3 -m ensurepip || python3 -m ensurepip --user) && (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet                 --no-warn-script-location 'kfp==1.8.1' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet                 --no-warn-script-location 'kfp==1.8.1' --user) && \"$0\" \"$@\"",
+              "sh",
+              "-ec",
+              "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.v2.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef import_parquet_to_bq_op(\n    transformed_dataset: Input[Dataset],\n    output_bq_table: Output[Dataset],\n    bq_project: str,\n    bq_dataset_id: str,\n    bq_dest_table_id: str\n):\n    '''\n    transformed_dataset: dict\n        Input metadata. Stores the path in GCS\n        for the datasets.\n        Usage:\n            train_path = output_dataset['train']\n            # returns: bucket_name/subfolder/subfolder/\n    bq_project: str\n        GCP project id\n    bq_dataset_id: str\n        Bigquery dataset id\n    bq_dest_table_id: str\n        Bigquery destination table name\n    '''\n\n    # Standard Libraries\n    import logging\n    import os\n    from google.cloud import bigquery\n\n    logging.basicConfig(level=logging.INFO)\n\n    data_path = transformed_dataset.metadata['transformed_dataset'][5:]\n    full_data_path = os.path.join('gs://', data_path, '*.parquet')\n\n    # Construct a BigQuery client object.\n    client = bigquery.Client(project=bq_project)\n    table_id = '.'.join([bq_project, bq_dataset_id, bq_dest_table_id])\n\n    job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.PARQUET)\n\n    load_job = client.load_table_from_uri(\n        full_data_path, table_id, job_config=job_config\n    )  # Make an API request.\n\n    load_job.result()  # Waits for the job to complete.\n\n    output_bq_table.metadata['bq_project'] = bq_project\n    output_bq_table.metadata['bq_dataset_id'] = bq_dataset_id\n    output_bq_table.metadata['bq_dest_table_id'] = bq_dest_table_id\n    output_bq_table.metadata['dataset_path'] = data_path\n\n"
+            ],
+            "image": "us-east1-docker.pkg.dev/renatoleite-mldemos/docker-images/nvt-conda",
+            "resources": {
               "cpuLimit": 8.0,
               "memoryLimit": 32.0
             }
@@ -214,42 +282,52 @@
       }
     },
     "pipelineInfo": {
-      "name": "nvt-pipeline-bq"
+      "name": "nvt-pipeline-gcs-feat"
     },
     "root": {
       "dag": {
         "tasks": {
-          "export-parquet-from-bq-op": {
+          "convert-csv-to-parquet-op": {
             "cachingOptions": {
               "enableCache": true
             },
             "componentRef": {
-              "name": "comp-export-parquet-from-bq-op"
+              "name": "comp-convert-csv-to-parquet-op"
             },
             "inputs": {
               "parameters": {
-                "bq_dataset_id": {
-                  "componentInputParameter": "bq_dataset_id"
+                "cols_dtype": {
+                  "componentInputParameter": "cols_dtype"
                 },
-                "bq_project": {
-                  "componentInputParameter": "bq_project"
+                "columns": {
+                  "componentInputParameter": "columns"
                 },
-                "bq_table_train": {
-                  "componentInputParameter": "bq_table_train"
-                },
-                "bq_table_valid": {
-                  "componentInputParameter": "bq_table_valid"
-                },
-                "location": {
-                  "componentInputParameter": "location"
+                "gpus": {
+                  "componentInputParameter": "gpus"
                 },
                 "output_path": {
                   "componentInputParameter": "output_path"
+                },
+                "recursive": {
+                  "runtimeValue": {
+                    "constantValue": {
+                      "stringValue": "False"
+                    }
+                  }
+                },
+                "sep": {
+                  "componentInputParameter": "sep"
+                },
+                "train_paths": {
+                  "componentInputParameter": "train_paths"
+                },
+                "valid_paths": {
+                  "componentInputParameter": "valid_paths"
                 }
               }
             },
             "taskInfo": {
-              "name": "export-parquet-from-bq-op"
+              "name": "convert-csv-to-parquet-op"
             }
           },
           "fit-dataset-op": {
@@ -260,14 +338,14 @@
               "name": "comp-fit-dataset-op"
             },
             "dependentTasks": [
-              "export-parquet-from-bq-op"
+              "convert-csv-to-parquet-op"
             ],
             "inputs": {
               "artifacts": {
                 "datasets": {
                   "taskOutputArtifact": {
                     "outputArtifactKey": "output_datasets",
-                    "producerTask": "export-parquet-from-bq-op"
+                    "producerTask": "convert-csv-to-parquet-op"
                   }
                 }
               },
@@ -317,6 +395,41 @@
             },
             "taskInfo": {
               "name": "fit-dataset-op"
+            }
+          },
+          "import-parquet-to-bq-op": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-import-parquet-to-bq-op"
+            },
+            "dependentTasks": [
+              "transform-dataset-op"
+            ],
+            "inputs": {
+              "artifacts": {
+                "transformed_dataset": {
+                  "taskOutputArtifact": {
+                    "outputArtifactKey": "transformed_dataset",
+                    "producerTask": "transform-dataset-op"
+                  }
+                }
+              },
+              "parameters": {
+                "bq_dataset_id": {
+                  "componentInputParameter": "bq_dataset_id"
+                },
+                "bq_dest_table_id": {
+                  "componentInputParameter": "bq_dest_table_id"
+                },
+                "bq_project": {
+                  "componentInputParameter": "bq_project"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "import-parquet-to-bq-op"
             }
           },
           "transform-dataset-op": {
@@ -393,19 +506,19 @@
           "bq_dataset_id": {
             "type": "STRING"
           },
+          "bq_dest_table_id": {
+            "type": "STRING"
+          },
           "bq_project": {
             "type": "STRING"
           },
-          "bq_table_train": {
+          "cols_dtype": {
             "type": "STRING"
           },
-          "bq_table_valid": {
+          "columns": {
             "type": "STRING"
           },
           "gpus": {
-            "type": "STRING"
-          },
-          "location": {
             "type": "STRING"
           },
           "output_path": {
@@ -417,7 +530,16 @@
           "recursive": {
             "type": "STRING"
           },
+          "sep": {
+            "type": "STRING"
+          },
           "shuffle": {
+            "type": "STRING"
+          },
+          "train_paths": {
+            "type": "STRING"
+          },
+          "valid_paths": {
             "type": "STRING"
           },
           "workflow_path": {

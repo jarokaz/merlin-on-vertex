@@ -200,7 +200,8 @@ def fit_dataset_op(
 
     logging.basicConfig(level=logging.INFO)
 
-    FIT_FOLDER = os.path.join('/gcs', workflow_path, 'fitted_workflow')
+    # FIT_FOLDER = os.path.join('/gcs', workflow_path, 'fitted_workflow')
+    FIT_FOLDER = '.'
 
     # Check if the `split_name` dataset is present
     data_path = datasets.get(split_name, '')
@@ -229,7 +230,8 @@ def fit_dataset_op(
                             Check cluster parameters')
 
     # Load Transformation steps
-    full_workflow_path = os.path.join('/gcs', workflow_path)
+    # full_workflow_path = os.path.join('/gcs', workflow_path)
+    full_workflow_path = '/home/renatoleite/workspace/merlin-on-vertex/src/kfp_components/saved_workflow'
     
     logging.info('Loading saved workflow')
     workflow = nvt.Workflow.load(full_workflow_path, client)
@@ -241,7 +243,7 @@ def fit_dataset_op(
     logging.info('Finished generating statistics for dataset.')
 
     logging.info(f'Saving workflow to {FIT_FOLDER}')
-    workflow.save(FIT_FOLDER)
+    # workflow.save(FIT_FOLDER)
 
     # CHANGED to run locally
     fitted_workflow['fitted_workflow'] = FIT_FOLDER
@@ -418,11 +420,11 @@ def export_parquet_from_bq_op(
 
 
 def import_parquet_to_bq_op(
-    transformed_dataset: dict, #Input[Dataset],
+    transform_dataset: dict, # Input[Dataset],
+    output_bq_table: dict, # Output[Dataset]
     bq_project: str,
     bq_dataset_id: str,
-    bq_dest_table_id: str,
-    location: str
+    bq_dest_table_id: str
 ):
     '''
     transformed_dataset: dict
@@ -446,24 +448,28 @@ def import_parquet_to_bq_op(
 
     logging.basicConfig(level=logging.INFO)
 
-    transformed_dataset['transformed_dataset']
+    data_path = transform_dataset['transformed_dataset'][5:]
+    full_data_path = os.path.join('gs://', data_path, '*.parquet')
     
     # Construct a BigQuery client object.
-    client = bigquery.Client()
+    client = bigquery.Client(project=bq_project)
     table_id = '.'.join([bq_project, bq_dataset_id, bq_dest_table_id])
 
-    job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.PARQUET,)
-    uri = "gs://cloud-samples-data/bigquery/us-states/us-states.parquet"
+    job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.PARQUET)
 
     load_job = client.load_table_from_uri(
-        uri, table_id, job_config=job_config
+        full_data_path, table_id, job_config=job_config
     )  # Make an API request.
 
     load_job.result()  # Waits for the job to complete.
 
-    destination_table = client.get_table(table_id)
-    print("Loaded {} rows.".format(destination_table.num_rows))
-    # [END bigquery_load_table_gcs_parquet]
+    output_bq_table['bq_project'] = bq_project
+    output_bq_table['bq_dataset_id'] = bq_dataset_id
+    output_bq_table['bq_dest_table_id'] = bq_dest_table_id
+
+    output_bq_table['dataset_path'] = os.path.join(data_path)
+
+    return output_bq_table
 
 
 def load_features_feature_store_op():
