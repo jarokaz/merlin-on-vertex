@@ -122,6 +122,37 @@
           }
         }
       },
+      "comp-load-bq-to-feature-store-op": {
+        "executorLabel": "exec-load-bq-to-feature-store-op",
+        "inputDefinitions": {
+          "artifacts": {
+            "output_bq_table": {
+              "artifactType": {
+                "schemaTitle": "system.Dataset",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          },
+          "parameters": {
+            "cols_dtype": {
+              "type": "STRING"
+            },
+            "columns": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "artifacts": {
+            "feature_store_path": {
+              "artifactType": {
+                "schemaTitle": "system.Artifact",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          }
+        }
+      },
       "comp-transform-dataset-op": {
         "executorLabel": "exec-transform-dataset-op",
         "inputDefinitions": {
@@ -242,7 +273,31 @@
               "sh",
               "-ec",
               "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.v2.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
-              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef import_parquet_to_bq_op(\n    transformed_dataset: Input[Dataset],\n    output_bq_table: Output[Dataset],\n    bq_project: str,\n    bq_dataset_id: str,\n    bq_dest_table_id: str\n):\n    '''\n    transformed_dataset: dict\n        Input metadata. Stores the path in GCS\n        for the datasets.\n        Usage:\n            train_path = output_dataset['train']\n            # returns: bucket_name/subfolder/subfolder/\n    bq_project: str\n        GCP project id\n    bq_dataset_id: str\n        Bigquery dataset id\n    bq_dest_table_id: str\n        Bigquery destination table name\n    '''\n\n    # Standard Libraries\n    import logging\n    import os\n    from google.cloud import bigquery\n\n    logging.basicConfig(level=logging.INFO)\n\n    data_path = transformed_dataset.metadata['transformed_dataset'][5:]\n    full_data_path = os.path.join('gs://', data_path, '*.parquet')\n\n    # Construct a BigQuery client object.\n    client = bigquery.Client(project=bq_project)\n    table_id = '.'.join([bq_project, bq_dataset_id, bq_dest_table_id])\n\n    job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.PARQUET)\n\n    load_job = client.load_table_from_uri(\n        full_data_path, table_id, job_config=job_config\n    )  # Make an API request.\n\n    load_job.result()  # Waits for the job to complete.\n\n    output_bq_table.metadata['bq_project'] = bq_project\n    output_bq_table.metadata['bq_dataset_id'] = bq_dataset_id\n    output_bq_table.metadata['bq_dest_table_id'] = bq_dest_table_id\n    output_bq_table.metadata['dataset_path'] = data_path\n\n"
+              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef import_parquet_to_bq_op(\n    transformed_dataset: Input[Dataset],\n    output_bq_table: Output[Dataset],\n    bq_project: str,\n    bq_dataset_id: str,\n    bq_dest_table_id: str\n):\n    '''\n    transformed_dataset: dict\n        Input metadata. Stores the path in GCS\n        for the datasets.\n        Usage:\n            train_path = output_dataset['train']\n            # returns: bucket_name/subfolder/subfolder/\n    bq_project: str\n        GCP project id\n    bq_dataset_id: str\n        Bigquery dataset id\n    bq_dest_table_id: str\n        Bigquery destination table name\n    '''\n\n    # Standard Libraries\n    import logging\n    import os\n    from google.cloud import bigquery\n\n    logging.basicConfig(level=logging.INFO)\n\n    data_path = transformed_dataset.metadata['transformed_dataset'][5:]\n    full_data_path = os.path.join('gs://', data_path, '*.parquet')\n\n    # Construct a BigQuery client object.\n    client = bigquery.Client(project=bq_project)\n    table_id = '.'.join([bq_project, bq_dataset_id, bq_dest_table_id])\n\n    job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.PARQUET)\n\n    load_job = client.load_table_from_uri(\n        full_data_path, table_id, job_config=job_config\n    )  # Make an API request.\n\n    logging.info('Loading data from GCS to BQ')\n    load_job.result()  # Waits for the job to complete.\n\n    output_bq_table.metadata['bq_project'] = bq_project\n    output_bq_table.metadata['bq_dataset_id'] = bq_dataset_id\n    output_bq_table.metadata['bq_dest_table_id'] = bq_dest_table_id\n    output_bq_table.metadata['dataset_path'] = data_path\n\n"
+            ],
+            "image": "us-east1-docker.pkg.dev/renatoleite-mldemos/docker-images/nvt-conda",
+            "resources": {
+              "cpuLimit": 8.0,
+              "memoryLimit": 32.0
+            }
+          }
+        },
+        "exec-load-bq-to-feature-store-op": {
+          "container": {
+            "args": [
+              "--executor_input",
+              "{{$}}",
+              "--function_to_execute",
+              "load_bq_to_feature_store_op"
+            ],
+            "command": [
+              "sh",
+              "-c",
+              "(python3 -m ensurepip || python3 -m ensurepip --user) && (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet                 --no-warn-script-location 'kfp==1.8.1' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet                 --no-warn-script-location 'kfp==1.8.1' --user) && \"$0\" \"$@\"",
+              "sh",
+              "-ec",
+              "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.v2.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+              "\nfrom kfp.v2.dsl import *\nfrom typing import *\n\ndef load_bq_to_feature_store_op(\n    output_bq_table: Input[Dataset],\n    feature_store_path: Output[Artifact],\n    columns: list,\n    cols_dtype: list\n):\n    from datetime import datetime\n    import re\n    import time\n    import logging\n    import os\n\n    from google.api_core.exceptions import AlreadyExists\n\n    from google.cloud.aiplatform_v1beta1 import (\n        FeaturestoreOnlineServingServiceClient, FeaturestoreServiceClient)\n    from google.cloud.aiplatform_v1beta1.types import \\\n        entity_type as entity_type_pb2\n    from google.cloud.aiplatform_v1beta1.types import feature as feature_pb2\n    from google.cloud.aiplatform_v1beta1.types import \\\n        featurestore as featurestore_pb2\n    from google.cloud.aiplatform_v1beta1.types import \\\n        featurestore_service as featurestore_service_pb2\n    from google.cloud.aiplatform_v1beta1.types import io as io_pb2\n    from google.protobuf.timestamp_pb2 import Timestamp\n\n    logging.basicConfig(level=logging.INFO)\n\n    PROJECT_ID = output_bq_table.metadata['bq_project']\n    DATASET_ID = output_bq_table.metadata['bq_dataset_id']\n    TABLE_ID = output_bq_table.metadata['bq_dest_table_id']\n\n    # To import the BQ data to feature store we need to \n    # define an EntityType which groups the features. As this dataset\n    # does not have an ID, a temporary one was created.\n\n    from google.cloud import bigquery\n\n    client = bigquery.Client(project=PROJECT_ID)\n    job_config = bigquery.QueryJobConfig(\n        destination=f'{PROJECT_ID}.{DATASET_ID}.train_users'\n    )\n\n    query_job = client.query(\n        f'''\n        SELECT DIV(ROW_NUMBER() OVER(), 100000) user_id, *\n        FROM `{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}`\n        ''',\n        job_config=job_config\n    )\n    query_job.result()\n\n    # Temporary TABLE_ID\n    TABLE_ID = 'train_users'\n\n    REGION = 'us-central1'\n\n    BIGQUERY_TABLE = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'\n    ID_COLUMN = \"user_id\"\n    IGNORE_COLUMNS_INGESTION = [\"user_id\", \"label\"]\n\n    FEATURE_STORE_NAME_PREFIX = \"criteo_nvt_e2e\"\n    FEATURE_STORE_NODE_COUNT = 1\n\n    ENTITY_TYPE_ID = \"users\"\n    ENTITY_TYPE_DESCRIPTION = \"Users website navigation\"\n\n    IMPORT_WORKER_COUNT = 1\n\n    # Constants based on the params\n    BIGQUERY_SOURCE = f\"bq://{BIGQUERY_TABLE}\"\n    API_ENDPOINT = f\"{REGION}-aiplatform.googleapis.com\"\n\n    TIMESTAMP = datetime.now().strftime(\"%Y%m%d%H%M%S\")\n\n    feature_store_path.metadata['bq_source'] = BIGQUERY_SOURCE\n\n    # Create admin_client for CRUD and data_client for reading feature values.\n    admin_client = FeaturestoreServiceClient(\n        client_options={\"api_endpoint\": API_ENDPOINT}\n    )\n    data_client = FeaturestoreOnlineServingServiceClient(\n        client_options={\"api_endpoint\": API_ENDPOINT}\n    )\n\n    # Represents featurestore resource path.\n    BASE_RESOURCE_PATH = admin_client.common_location_path(PROJECT_ID, REGION)\n\n    FEATURESTORE_ID = f\"{FEATURE_STORE_NAME_PREFIX}_{TIMESTAMP}\"\n    feature_store_path.metadata['featurestore_id'] = FEATURESTORE_ID\n\n    create_lro = admin_client.create_featurestore(\n        featurestore_service_pb2.CreateFeaturestoreRequest(\n            parent=BASE_RESOURCE_PATH,\n            featurestore_id=FEATURESTORE_ID,\n            featurestore=featurestore_pb2.Featurestore(\n                online_serving_config= \\\n                    featurestore_pb2.Featurestore.OnlineServingConfig(\n                        fixed_node_count=FEATURE_STORE_NODE_COUNT\n                ),\n            ),\n        )\n    )\n    logging.info(f'Creating feature store {FEATURESTORE_ID}.')\n    create_lro.result()\n\n    # Create users entity type with monitoring enabled.\n    # All Features belonging to this EntityType will by \n    # default inherit the monitoring config.\n    users_entity_type_lro = admin_client.create_entity_type(\n        featurestore_service_pb2.CreateEntityTypeRequest(\n            parent=admin_client.featurestore_path(\n                PROJECT_ID, REGION, FEATURESTORE_ID\n            ),\n            entity_type_id=ENTITY_TYPE_ID,\n            entity_type=entity_type_pb2.EntityType(\n                description=ENTITY_TYPE_DESCRIPTION\n            ),\n        )\n    )\n\n    # Similarly, wait for EntityType creation operation.\n    logging.info(f'Creating Entity Type {ENTITY_TYPE_ID}.')\n    feature_store_path.metadata['entity_type_id'] = ENTITY_TYPE_ID\n    users_entity_type_lro.result()\n\n    create_feature_requests = []\n    feature_specs = []\n    feature_store_path.metadata['cols_ids_dtype'] = {}\n\n    mapping = {\n        'int32': feature_pb2.Feature.ValueType.INT64,\n        'hex': feature_pb2.Feature.ValueType.INT64,\n    }\n\n    for i, types in enumerate(cols_dtype):\n        if columns[i] in IGNORE_COLUMNS_INGESTION:\n            continue\n        create_feature_requests.append(\n            featurestore_service_pb2.CreateFeatureRequest(\n                feature=feature_pb2.Feature(\n                    name=columns[i],\n                    value_type=mapping[str(types)],\n                    description=columns[i]\n                ),\n                parent=admin_client.entity_type_path(\n                    PROJECT_ID, REGION, FEATURESTORE_ID, ENTITY_TYPE_ID),\n                feature_id=re.sub(r'[\\W]+', '', columns[i]).lower(),\n            )\n        )\n        feature_specs.append(\n            featurestore_service_pb2.ImportFeatureValuesRequest.FeatureSpec(\n                id=re.sub(r'[\\W]+', '', columns[i]).lower(), \n                source_field=columns[i]\n            )\n        )\n        feature_store_path.metadata['cols_ids_dtype'][\n            re.sub(r'[\\W]+', '', columns[i]).lower()\n        ] = mapping[str(types)]\n\n    for request in create_feature_requests:\n        try:\n            logging.info(admin_client.create_feature(request).result())\n        except AlreadyExists as e:\n            logging.info(e)\n\n    now = time.time()\n    seconds = int(now)\n    timestamp = Timestamp(seconds=seconds)\n\n    import_request = featurestore_service_pb2.ImportFeatureValuesRequest(\n        entity_type=admin_client.entity_type_path(\n            PROJECT_ID, REGION, FEATURESTORE_ID, ENTITY_TYPE_ID),\n        bigquery_source=io_pb2.BigQuerySource(input_uri=BIGQUERY_SOURCE),\n        entity_id_field=ID_COLUMN,\n        feature_specs=feature_specs,\n        feature_time=timestamp,\n        worker_count=IMPORT_WORKER_COUNT,\n    )\n    ingestion_lro = admin_client.import_feature_values(import_request)\n    logging.info('Start to import, will take a couple of minutes.')\n\n"
             ],
             "image": "us-east1-docker.pkg.dev/renatoleite-mldemos/docker-images/nvt-conda",
             "resources": {
@@ -430,6 +485,38 @@
             },
             "taskInfo": {
               "name": "import-parquet-to-bq-op"
+            }
+          },
+          "load-bq-to-feature-store-op": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-load-bq-to-feature-store-op"
+            },
+            "dependentTasks": [
+              "import-parquet-to-bq-op"
+            ],
+            "inputs": {
+              "artifacts": {
+                "output_bq_table": {
+                  "taskOutputArtifact": {
+                    "outputArtifactKey": "output_bq_table",
+                    "producerTask": "import-parquet-to-bq-op"
+                  }
+                }
+              },
+              "parameters": {
+                "cols_dtype": {
+                  "componentInputParameter": "cols_dtype"
+                },
+                "columns": {
+                  "componentInputParameter": "columns"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "load-bq-to-feature-store-op"
             }
           },
           "transform-dataset-op": {

@@ -476,6 +476,7 @@ def import_parquet_to_bq_op(
         full_data_path, table_id, job_config=job_config
     )  # Make an API request.
 
+    logging.info('Loading data from GCS to BQ')
     load_job.result()  # Waits for the job to complete.
 
     output_bq_table.metadata['bq_project'] = bq_project
@@ -485,12 +486,184 @@ def import_parquet_to_bq_op(
 
 
 @dsl.component(base_image=BASE_IMAGE_NAME)
-def load_bq_to_feature_store(
-    transformed_dataset: Input[Dataset],
-    output_bq_table: Output[Dataset],
-    bq_project: str,
-    bq_dataset_id: str,
-    bq_dest_table_id: str
+def load_bq_to_feature_store_op(
+    output_bq_table: Input[Dataset],
+    feature_store_path: Output[Artifact],
+    columns: list,
+    cols_dtype: list
 ):
-    
-    pass
+    from datetime import datetime
+    import re
+    import time
+    import logging
+    import os
+
+    from google.api_core.exceptions import AlreadyExists
+
+    from google.cloud.aiplatform_v1beta1 import (
+        FeaturestoreOnlineServingServiceClient, FeaturestoreServiceClient)
+    from google.cloud.aiplatform_v1beta1.types import \
+        entity_type as entity_type_pb2
+    from google.cloud.aiplatform_v1beta1.types import feature as feature_pb2
+    from google.cloud.aiplatform_v1beta1.types import \
+        featurestore as featurestore_pb2
+    from google.cloud.aiplatform_v1beta1.types import \
+        featurestore_service as featurestore_service_pb2
+    from google.cloud.aiplatform_v1beta1.types import io as io_pb2
+    from google.protobuf.timestamp_pb2 import Timestamp
+
+    logging.basicConfig(level=logging.INFO)
+
+    PROJECT_ID = output_bq_table.metadata['bq_project']
+    DATASET_ID = output_bq_table.metadata['bq_dataset_id']
+    TABLE_ID = output_bq_table.metadata['bq_dest_table_id']
+
+    # To import the BQ data to feature store we need to 
+    # define an EntityType which groups the features. As this dataset
+    # does not have an ID, a temporary one was created.
+
+    from google.cloud import bigquery
+
+    client = bigquery.Client(project=PROJECT_ID)
+    job_config = bigquery.QueryJobConfig(
+        destination=f'{PROJECT_ID}.{DATASET_ID}.train_users'
+    )
+
+    query_job = client.query(
+        f'''
+        SELECT DIV(ROW_NUMBER() OVER(), 100000) user_id, *
+        FROM `{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}`
+        ''',
+        job_config=job_config
+    )
+    query_job.result()
+
+    # Temporary TABLE_ID
+    TABLE_ID = 'train_users'
+
+    REGION = 'us-central1'
+
+    BIGQUERY_TABLE = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'
+    ID_COLUMN = "user_id"
+    IGNORE_COLUMNS_INGESTION = ["user_id", "label"]
+
+    FEATURE_STORE_NAME_PREFIX = "criteo_nvt_e2e"
+    FEATURE_STORE_NODE_COUNT = 1
+
+    ENTITY_TYPE_ID = "users"
+    ENTITY_TYPE_DESCRIPTION = "Users website navigation"
+
+    IMPORT_WORKER_COUNT = 1
+
+    # Constants based on the params
+    BIGQUERY_SOURCE = f"bq://{BIGQUERY_TABLE}"
+    API_ENDPOINT = f"{REGION}-aiplatform.googleapis.com"
+
+    TIMESTAMP = datetime.now().strftime("%Y%m%d%H%M%S")
+
+    feature_store_path.metadata['bq_source'] = BIGQUERY_SOURCE
+
+    # Create admin_client for CRUD and data_client for reading feature values.
+    admin_client = FeaturestoreServiceClient(
+        client_options={"api_endpoint": API_ENDPOINT}
+    )
+    data_client = FeaturestoreOnlineServingServiceClient(
+        client_options={"api_endpoint": API_ENDPOINT}
+    )
+
+    # Represents featurestore resource path.
+    BASE_RESOURCE_PATH = admin_client.common_location_path(PROJECT_ID, REGION)
+
+    FEATURESTORE_ID = f"{FEATURE_STORE_NAME_PREFIX}_{TIMESTAMP}"
+    feature_store_path.metadata['featurestore_id'] = FEATURESTORE_ID
+
+    create_lro = admin_client.create_featurestore(
+        featurestore_service_pb2.CreateFeaturestoreRequest(
+            parent=BASE_RESOURCE_PATH,
+            featurestore_id=FEATURESTORE_ID,
+            featurestore=featurestore_pb2.Featurestore(
+                online_serving_config= \
+                    featurestore_pb2.Featurestore.OnlineServingConfig(
+                        fixed_node_count=FEATURE_STORE_NODE_COUNT
+                ),
+            ),
+        )
+    )
+    logging.info(f'Creating feature store {FEATURESTORE_ID}.')
+    create_lro.result()
+
+    # Create users entity type with monitoring enabled.
+    # All Features belonging to this EntityType will by 
+    # default inherit the monitoring config.
+    users_entity_type_lro = admin_client.create_entity_type(
+        featurestore_service_pb2.CreateEntityTypeRequest(
+            parent=admin_client.featurestore_path(
+                PROJECT_ID, REGION, FEATURESTORE_ID
+            ),
+            entity_type_id=ENTITY_TYPE_ID,
+            entity_type=entity_type_pb2.EntityType(
+                description=ENTITY_TYPE_DESCRIPTION
+            ),
+        )
+    )
+
+    # Similarly, wait for EntityType creation operation.
+    logging.info(f'Creating Entity Type {ENTITY_TYPE_ID}.')
+    feature_store_path.metadata['entity_type_id'] = ENTITY_TYPE_ID
+    users_entity_type_lro.result()
+
+    create_feature_requests = []
+    feature_specs = []
+    feature_store_path.metadata['cols_ids_dtype'] = {}
+
+    mapping = {
+        'int32': feature_pb2.Feature.ValueType.INT64,
+        'hex': feature_pb2.Feature.ValueType.INT64,
+    }
+
+    for i, types in enumerate(cols_dtype):
+        if columns[i] in IGNORE_COLUMNS_INGESTION:
+            continue
+        create_feature_requests.append(
+            featurestore_service_pb2.CreateFeatureRequest(
+                feature=feature_pb2.Feature(
+                    name=columns[i],
+                    value_type=mapping[str(types)],
+                    description=columns[i]
+                ),
+                parent=admin_client.entity_type_path(
+                    PROJECT_ID, REGION, FEATURESTORE_ID, ENTITY_TYPE_ID),
+                feature_id=re.sub(r'[\W]+', '', columns[i]).lower(),
+            )
+        )
+        feature_specs.append(
+            featurestore_service_pb2.ImportFeatureValuesRequest.FeatureSpec(
+                id=re.sub(r'[\W]+', '', columns[i]).lower(), 
+                source_field=columns[i]
+            )
+        )
+        feature_store_path.metadata['cols_ids_dtype'][
+            re.sub(r'[\W]+', '', columns[i]).lower()
+        ] = mapping[str(types)]
+
+    for request in create_feature_requests:
+        try:
+            logging.info(admin_client.create_feature(request).result())
+        except AlreadyExists as e:
+            logging.info(e)
+
+    now = time.time()
+    seconds = int(now)
+    timestamp = Timestamp(seconds=seconds)
+
+    import_request = featurestore_service_pb2.ImportFeatureValuesRequest(
+        entity_type=admin_client.entity_type_path(
+            PROJECT_ID, REGION, FEATURESTORE_ID, ENTITY_TYPE_ID),
+        bigquery_source=io_pb2.BigQuerySource(input_uri=BIGQUERY_SOURCE),
+        entity_id_field=ID_COLUMN,
+        feature_specs=feature_specs,
+        feature_time=timestamp,
+        worker_count=IMPORT_WORKER_COUNT,
+    )
+    ingestion_lro = admin_client.import_feature_values(import_request)
+    logging.info('Start to import, will take a couple of minutes.')

@@ -85,3 +85,13 @@ def preprocessing_pipeline_gcs_feat(
     )
     import_parquet_to_bq.set_cpu_limit("8")
     import_parquet_to_bq.set_memory_limit("32G")
+
+    # === Create feature store and load data
+    load_bq_to_feature_store = kfp_components.load_bq_to_feature_store_op(
+        output_bq_table = \
+            import_parquet_to_bq.outputs['output_bq_table'],
+        columns = columns,
+        cols_dtype = cols_dtype
+    )
+    load_bq_to_feature_store.set_cpu_limit("8")
+    load_bq_to_feature_store.set_memory_limit("32G")
