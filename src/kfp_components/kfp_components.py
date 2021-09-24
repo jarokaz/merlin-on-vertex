@@ -43,6 +43,8 @@ def convert_csv_to_parquet_op(
     recursive: Optional[bool] = False
 ):
     '''
+    Component to convert CSV file(s) to Parquet format using NVTabular.
+
     output_datasets: Output[Dataset]
         Output metadata with references to the converted CSVs in GCS.
         Usage:
@@ -196,6 +198,8 @@ def fit_dataset_op(
     part_mem_frac: Optional[float] = 0.125
 ):
     '''
+    Component to generate statistics from the dataset.
+
     datasets: Input[Dataset]
         Input metadata with references to the train and valid converted
         datasets in GCS.
@@ -294,6 +298,8 @@ def transform_dataset_op(
     part_mem_frac: float = 0.125,
 ):
     '''
+    Component to transform a dataset according to the workflow specifications.
+
     fitted_workflow: Input[Artifact]
         Input metadata with the path to the fitted_workflow and the 
         location of the converted datasets in GCS (train and validation).
@@ -395,6 +401,8 @@ def export_parquet_from_bq_op(
     location: str
 ):
     '''
+    Component to export PARQUET files from a bigquery table.
+
     output_datasets: dict
         Output metadata with the GCS path for the exported datasets.
         Usage:
@@ -477,6 +485,8 @@ def import_parquet_to_bq_op(
     bq_dest_table_id: str
 ):
     '''
+    Component to load PARQUET files to a Bigquery table.
+
     transformed_dataset: dict
         Input metadata. Stores the path in GCS
         for the datasets.
@@ -534,6 +544,8 @@ def load_bq_to_feature_store_op(
     cols_dtype: list
 ):
     '''
+    Component to create a feature store and load the data from Bigquery.
+
     output_bq_table: Input[Artifact]
         Input metadata with references to the project ID, dataset ID and table
         ID where BQ table was imported.
@@ -737,3 +749,5 @@ def load_bq_to_feature_store_op(
     )
     ingestion_lro = admin_client.import_feature_values(import_request)
     logging.info('Start to import, will take a couple of minutes.')
+    # Polls for the LRO status and prints when the LRO has completed
+    # ingestion_lro.result()

@@ -14,7 +14,6 @@
 
 """Preprocessing pipeline prototype."""
 
-from typing import Optional
 import kfp_components
 from kfp.v2 import dsl
 

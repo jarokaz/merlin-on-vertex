@@ -37,7 +37,7 @@ def preprocessing_pipeline_bq(
     shuffle: str,
     recursive: bool
 ):
-    # === Convert CSV to Parquet
+    # === Export Bigquery tables as PARQUET files
     export_parquet_from_bq = kfp_components.export_parquet_from_bq_op(
         bq_table_train=bq_table_train,
         bq_table_valid=bq_table_valid,
