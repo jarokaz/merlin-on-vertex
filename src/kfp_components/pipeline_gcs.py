@@ -73,5 +73,3 @@ def preprocessing_pipeline_gcs(
     transform_dataset.set_memory_limit("32G")
     transform_dataset.set_gpu_limit("1")
     transform_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
-
-    

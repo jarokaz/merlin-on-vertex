@@ -43,6 +43,13 @@ def convert_csv_to_parquet_op(
     recursive: Optional[bool] = False
 ):
     '''
+    output_datasets: Output[Dataset]
+        Output metadata with references to the converted CSVs in GCS.
+        Usage:
+            output_datasets.metadata['train']
+                .example: '/gcs/my_bucket/folders/train'
+            output_datasets.metadata['valid']
+                .example: '/gcs/my_bucket/folders/valid'
     train_paths: list
         List of paths to folders or files in GCS for training.
         For recursive folder search, set the recursive variable to True
@@ -51,26 +58,32 @@ def convert_csv_to_parquet_op(
             '<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or
             a combination of both.
     valid_paths: list
-        List of paths to folders or files in GCS for validation
+        List of paths to folders or files in GCS for validation.
         For recursive folder search, set the recursive variable to True
         Format:
             '<bucket_name>/<subfolder1>/<subfolder>/' or
             '<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or
             a combination of both.
     output_path: str
-        Path to write the converted parquet files
+        Path in GCS to write the converted parquet files.
         Format:
-            '<bucket_name>/<subfolder1>/<subfolder>/'
+            '<bucket_name>/<subfolder1>/<subfolder>'
+    columns: list
+        List with the columns name from CSV file.
+        Format:
+            ['I1', 'I2', ..., 'C1', ...]
+    cols_dtype: list
+        List with the dtype of the columns from CSV. The position of the 
+        dtype in the list must match the position of the column name
+        in the columns variable explained before.
+        Format:
+            ['int32', ..., 'float']
     gpus: str
-        GPUs available. Example:
-            If there are 4 gpus available, must be '0,1,2,3'
-    output_datasets: dict
-        Metadata pointing to the converted dataset
+        GPUs available. 
         Format:
-            output_datasets.metadata['train'] = \
-                '<bucket_name>/<subfolder1>/<subfolder>/'
+            If there are 4 gpus available, must be '0,1,2,3'
     shuffle: str
-        How to shuffle the converted data, default to None.
+        How to shuffle the converted CSV, default to None.
         Options:
             PER_PARTITION
             PER_WORKER
@@ -107,6 +120,7 @@ def convert_csv_to_parquet_op(
 
     fs_spec = fsspec.filesystem('gs')
     rec_symbol = '**' if recursive else '*'
+
     TRAIN_SPLIT_FOLDER = 'train'
     VALID_SPLIT_FOLDER = 'valid'
 
@@ -119,8 +133,9 @@ def convert_csv_to_parquet_op(
         )
         client = Client(cluster)
     else:
-        raise Exception('Cannot create Cluster. \
-                    Provide a list of available GPUs')
+        raise Exception(
+            'Cannot create Cluster. Provide a list of available GPUs'
+        )
 
     for folder_name, data_paths in zip(
         [TRAIN_SPLIT_FOLDER, VALID_SPLIT_FOLDER], 
@@ -163,6 +178,8 @@ def convert_csv_to_parquet_op(
             preserve_files=True,
             shuffle=shuffle
         )
+
+        # Write output path to metadata
         output_datasets.metadata[folder_name] = full_output_path
 
 
@@ -179,20 +196,29 @@ def fit_dataset_op(
     part_mem_frac: Optional[float] = 0.125
 ):
     '''
-    datasets: dict
-        Input metadata from previus step. Stores the full path of the 
-        converted datasets.
-        How to access:
-            full_path = datasets.metadata.get('train')
-    fitted_workflow: dict
-        Output metadata for next step. Stores the full path of the 
-        converted dataset, and saved workflow with statistics.
+    datasets: Input[Dataset]
+        Input metadata with references to the train and valid converted
+        datasets in GCS.
+        Usage:
+            full_path_train = datasets.metadata.get('train')
+                .example: '/gcs/my_bucket/folders/converted/train'
+            full_path_valid = datasets.metadata.get('train')
+                .example: '/gcs/my_bucket/folders/converted/valid'
+    fitted_workflow: Output[Artifact]
+        Output metadata with the path to the fitted workflow artifacts
+        (statistics) and converted datasets in GCS.
+        Usage:
+            fitted_workflow.metadata['fitted_workflow']
+                .example: '/gcs/my_bucket/fitted_workflow'
+            fitted_workflow.metadata['datasets']
+                .example: '/gcs/my_bucket/folders/converted/train'
     workflow_path: str
-        Path to the current workflow, not fitted.
+        Path to the current workflow, not fitted. This folder must have 
+        2 files: metadata.json and workflow.pkl.
         Format:
-            '<bucket_name>/<subfolder1>/<subfolder>/'
+            '<bucket_name>/<subfolder1>/<subfolder>'
     split_name: str
-        Which dataset to calculate the statistics. 'train' or 'valid'
+        Which dataset split to calculate the statistics. 'train' or 'valid'
     '''
 
     import logging
@@ -231,8 +257,9 @@ def fit_dataset_op(
         )
         client = Client(cluster)
     else:
-        raise Exception('Cannot create Cluster. \
-                            Provide a list of available GPUs')
+        raise Exception(
+            'Cannot create Cluster. Provide a list of available GPUs'
+        )
 
     # Load Transformation steps
     full_workflow_path = os.path.join('/gcs', workflow_path)
@@ -267,29 +294,28 @@ def transform_dataset_op(
     part_mem_frac: float = 0.125,
 ):
     '''
-    fitted_workflow: dict
-        Input metadata from previous step. Stores the path of the fitted_workflow
-        and the location of the datasets (train and validation).
+    fitted_workflow: Input[Artifact]
+        Input metadata with the path to the fitted_workflow and the 
+        location of the converted datasets in GCS (train and validation).
         Usage:
-            train_path = fitted_workflow.metadata['datasets']['train]
-            output: '<bucket_name>/<subfolder1>/<subfolder>/'
-    transformed_dataset: dict
-        Output metadata for next step. Stores the path of the transformed dataset 
+            fitted_workflow.metadata['datasets']['train']
+                example: '/gcs/my_bucket/converted/train'
+            fitted_workflow.metadata['fitted_workflow']
+                example: '/gcs/my_bucket/fitted_workflow'
+    transformed_dataset: Output[Dataset]
+        Output metadata with the path to the transformed dataset 
         and the validation dataset.
+        Usage:
+            transformed_dataset.metadata['transformed_dataset']
+                .example: '/gcs/my_bucket/transformed_data/train'
+            transformed_dataset.metadata['original_datasets']
+                .example: '/gcs/my_bucket/converted/train'
     output_transformed: str,
-        Path to write the transformed parquet files
+        Path in GCS to write the transformed parquet files.
         Format:
             '<bucket_name>/<subfolder1>/<subfolder>/'
-    gpus: str
-        GPUs available. Example:
-            If there are 4 gpus available, must be '0,1,2,3'
-    shuffle: str
-        How to shuffle the converted data, default to None.
-        Options:
-            PER_PARTITION
-            PER_WORKER
-            FULL
     '''
+
     import logging
     import nvtabular as nvt
     import os
@@ -327,8 +353,9 @@ def transform_dataset_op(
         )
         client = Client(cluster)
     else:
-        raise Exception('Cannot create Cluster. \
-                            Provide a list of available GPUs')
+        raise Exception(
+            'Cannot create Cluster. Provide a list of available GPUs'
+        )
 
     # Load Transformation steps
     logging.info('Loading workflow and statistics')
@@ -368,24 +395,32 @@ def export_parquet_from_bq_op(
     location: str
 ):
     '''
+    output_datasets: dict
+        Output metadata with the GCS path for the exported datasets.
+        Usage:
+            output_datasets.metadata['train']
+                .example: '/gcs/bucket_name/subfolder/train/'
     output_path: str
-        Path to write the exported parquet files
+        Path to write the exported parquet files. Note it must 
+        start with gs://.
         Format:
             'gs://<bucket_name>/<subfolder1>/<subfolder>/'
     bq_project: str
         GCP project id
+        Format:
+            'my_project'
     bq_dataset_id: str
         Bigquery dataset id
+        Format:
+            'my_dataset_id'
     bq_table_train: str
         Bigquery table name for training dataset
+        Format:
+            'my_train_table_id'
     bq_table_valid: str
         BigQuery table name for validation dataset
-    output_datasets: dict
-        Output metadata for the next step. Stores the path in GCS
-        for the datasets.
-        Usage:
-            train_path = output_datasets.metadata['train']
-            # returns: bucket_name/subfolder/subfolder/
+        Format:
+            'my_valid_table_id'
     '''
 
     import logging
@@ -450,10 +485,16 @@ def import_parquet_to_bq_op(
             # returns: bucket_name/subfolder/subfolder/
     bq_project: str
         GCP project id
+        Format:
+            'my_project'
     bq_dataset_id: str
         Bigquery dataset id
+        Format:
+            'my_dataset_id'
     bq_dest_table_id: str
         Bigquery destination table name
+        Format:
+            'my_destination_table_id'
     '''
 
     # Standard Libraries
@@ -492,6 +533,37 @@ def load_bq_to_feature_store_op(
     columns: list,
     cols_dtype: list
 ):
+    '''
+    output_bq_table: Input[Artifact]
+        Input metadata with references to the project ID, dataset ID and table
+        ID where BQ table was imported.
+        Usage:
+            output_bq_table.metadata['bq_project']
+                .example: 'my_project'
+            output_bq_table.metadata['bq_dataset_id']
+                .example: 'my_dataset'
+            output_bq_table.metadata['bq_dest_table_id']
+                .example: 'my_table_id'
+            output_bq_table.metadata['dataset_path']
+                .example: 'my_bucket/subfolder/train'
+    feature_store_path: Output[Dataset]
+        Output metadata with informations about the feature store,
+        its entity types and features.
+        Usage:
+            feature_store_path.metadata['featurestore_id']
+                .example: 'feat_store_1234'
+    columns: list
+        List with the columns name from CSV file.
+        Format:
+            ['I1', 'I2', ..., 'C1', ...]
+    cols_dtype: list
+        List with the dtype of the columns from CSV. The position of the 
+        dtype in the list must match the position of the column name
+        in the columns variable explained before.
+        Format:
+            ['int32', ..., 'float']
+    '''
+
     from datetime import datetime
     import re
     import time
@@ -520,7 +592,7 @@ def load_bq_to_feature_store_op(
 
     # To import the BQ data to feature store we need to 
     # define an EntityType which groups the features. As this dataset
-    # does not have an ID, a temporary one was created.
+    # does not have an ID, a temporary one was created based on the row number.
 
     from google.cloud import bigquery
 
@@ -592,9 +664,7 @@ def load_bq_to_feature_store_op(
     logging.info(f'Creating feature store {FEATURESTORE_ID}.')
     create_lro.result()
 
-    # Create users entity type with monitoring enabled.
-    # All Features belonging to this EntityType will by 
-    # default inherit the monitoring config.
+    # Create users entity type. Monitoring disabled.
     users_entity_type_lro = admin_client.create_entity_type(
         featurestore_service_pb2.CreateEntityTypeRequest(
             parent=admin_client.featurestore_path(
@@ -607,7 +677,7 @@ def load_bq_to_feature_store_op(
         )
     )
 
-    # Similarly, wait for EntityType creation operation.
+    # Wait for EntityType creation operation.
     logging.info(f'Creating Entity Type {ENTITY_TYPE_ID}.')
     feature_store_path.metadata['entity_type_id'] = ENTITY_TYPE_ID
     users_entity_type_lro.result()
