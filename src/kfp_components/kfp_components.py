@@ -36,7 +36,7 @@ def convert_csv_to_parquet_op(
     valid_paths: list,
     output_path: str,
     columns: list,
-    cols_dtype: list,
+    cols_dtype: dict,
     sep: str,
     gpus: str,
     shuffle: Optional[str] = None,
@@ -74,12 +74,10 @@ def convert_csv_to_parquet_op(
         List with the columns name from CSV file.
         Format:
             ['I1', 'I2', ..., 'C1', ...]
-    cols_dtype: list
-        List with the dtype of the columns from CSV. The position of the 
-        dtype in the list must match the position of the column name
-        in the columns variable explained before.
+    cols_dtype: dict
+        Dict with the dtype of the columns from CSV.
         Format:
-            ['int32', ..., 'float']
+            {'I1':'int32', ..., 'C20':'hex'}
     gpus: str
         GPUs available. 
         Format:
@@ -540,8 +538,7 @@ def import_parquet_to_bq_op(
 def load_bq_to_feature_store_op(
     output_bq_table: Input[Dataset],
     feature_store_path: Output[Artifact],
-    columns: list,
-    cols_dtype: list
+    cols_dtype: dict
 ):
     '''
     Component to create a feature store and load the data from Bigquery.
@@ -564,28 +561,20 @@ def load_bq_to_feature_store_op(
         Usage:
             feature_store_path.metadata['featurestore_id']
                 .example: 'feat_store_1234'
-    columns: list
-        List with the columns name from CSV file.
+    cols_dtype: dict
+        Dict with the dtype of the columns from CSV.
         Format:
-            ['I1', 'I2', ..., 'C1', ...]
-    cols_dtype: list
-        List with the dtype of the columns from CSV. The position of the 
-        dtype in the list must match the position of the column name
-        in the columns variable explained before.
-        Format:
-            ['int32', ..., 'float']
+            {'I1':'int32', ..., 'C1':'hex'}
     '''
 
     from datetime import datetime
     import re
     import time
     import logging
-    import os
 
     from google.api_core.exceptions import AlreadyExists
 
-    from google.cloud.aiplatform_v1beta1 import (
-        FeaturestoreOnlineServingServiceClient, FeaturestoreServiceClient)
+    from google.cloud.aiplatform_v1beta1 import (FeaturestoreServiceClient)
     from google.cloud.aiplatform_v1beta1.types import \
         entity_type as entity_type_pb2
     from google.cloud.aiplatform_v1beta1.types import feature as feature_pb2
@@ -603,8 +592,12 @@ def load_bq_to_feature_store_op(
     TABLE_ID = output_bq_table.metadata['bq_dest_table_id']
 
     # To import the BQ data to feature store we need to 
-    # define an EntityType which groups the features. As this dataset
-    # does not have an ID, a temporary one was created based on the row number.
+    # define an EntityType which groups the features. 
+    # As this dataset does not have an ID, a temporary one was 
+    # created based on the row number.
+
+    # This is a temporary solution for this dataset. 
+    # Reconsider for your dataset.
 
     from google.cloud import bigquery
 
@@ -615,7 +608,7 @@ def load_bq_to_feature_store_op(
 
     query_job = client.query(
         f'''
-        SELECT DIV(ROW_NUMBER() OVER(), 100000) user_id, *
+        SELECT CAST(DIV(ROW_NUMBER() OVER(), 100000) as STRING) user_id, *
         FROM `{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}`
         ''',
         job_config=job_config
@@ -649,9 +642,6 @@ def load_bq_to_feature_store_op(
 
     # Create admin_client for CRUD and data_client for reading feature values.
     admin_client = FeaturestoreServiceClient(
-        client_options={"api_endpoint": API_ENDPOINT}
-    )
-    data_client = FeaturestoreOnlineServingServiceClient(
         client_options={"api_endpoint": API_ENDPOINT}
     )
 
@@ -696,37 +686,33 @@ def load_bq_to_feature_store_op(
 
     create_feature_requests = []
     feature_specs = []
-    feature_store_path.metadata['cols_ids_dtype'] = {}
 
     mapping = {
         'int32': feature_pb2.Feature.ValueType.INT64,
-        'hex': feature_pb2.Feature.ValueType.INT64,
+        'hex': feature_pb2.Feature.ValueType.INT64
     }
 
-    for i, types in enumerate(cols_dtype):
-        if columns[i] in IGNORE_COLUMNS_INGESTION:
+    for col, dtype in cols_dtype.items():
+        if col in IGNORE_COLUMNS_INGESTION:
             continue
         create_feature_requests.append(
             featurestore_service_pb2.CreateFeatureRequest(
                 feature=feature_pb2.Feature(
-                    name=columns[i],
-                    value_type=mapping[str(types)],
-                    description=columns[i]
+                    name=col,
+                    value_type=mapping[dtype],
+                    description=col
                 ),
                 parent=admin_client.entity_type_path(
-                    PROJECT_ID, REGION, FEATURESTORE_ID, ENTITY_TYPE_ID),
-                feature_id=re.sub(r'[\W]+', '', columns[i]).lower(),
+                    PROJECT_ID, REGION, FEATURESTORE_ID, ENTITY_TYPE_ID
+                ),
+                feature_id=re.sub(r'[\W]+', '', col).lower(),
             )
         )
         feature_specs.append(
             featurestore_service_pb2.ImportFeatureValuesRequest.FeatureSpec(
-                id=re.sub(r'[\W]+', '', columns[i]).lower(), 
-                source_field=columns[i]
+                id=re.sub(r'[\W]+', '', col).lower(), source_field=col
             )
         )
-        feature_store_path.metadata['cols_ids_dtype'][
-            re.sub(r'[\W]+', '', columns[i]).lower()
-        ] = mapping[str(types)]
 
     for request in create_feature_requests:
         try:
@@ -750,4 +736,4 @@ def load_bq_to_feature_store_op(
     ingestion_lro = admin_client.import_feature_values(import_request)
     logging.info('Start to import, will take a couple of minutes.')
     # Polls for the LRO status and prints when the LRO has completed
-    # ingestion_lro.result()
+    ingestion_lro.result()
