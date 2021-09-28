@@ -29,7 +29,9 @@ from typing import Optional
 
 BASE_IMAGE_NAME = 'us-east1-docker.pkg.dev/renatoleite-mldemos/docker-images/nvt-conda'
 
-@dsl.component(base_image=BASE_IMAGE_NAME)
+@dsl.component(
+    base_image=BASE_IMAGE_NAME
+)
 def convert_csv_to_parquet_op(
     output_datasets: Output[Dataset],
     train_paths: list,
@@ -183,7 +185,9 @@ def convert_csv_to_parquet_op(
         output_datasets.metadata[folder_name] = full_output_path
 
 
-@dsl.component(base_image=BASE_IMAGE_NAME)
+@dsl.component(
+    base_image=BASE_IMAGE_NAME
+)
 def fit_dataset_op(
     datasets: Input[Dataset],
     fitted_workflow: Output[Artifact],
@@ -282,7 +286,9 @@ def fit_dataset_op(
     fitted_workflow.metadata['datasets'] = datasets.metadata
 
 
-@dsl.component(base_image=BASE_IMAGE_NAME)
+@dsl.component(
+    base_image=BASE_IMAGE_NAME
+)
 def transform_dataset_op(
     fitted_workflow: Input[Artifact],
     transformed_dataset: Output[Dataset],
@@ -544,8 +550,8 @@ def load_bq_to_feature_store_op(
     Component to create a feature store and load the data from Bigquery.
 
     output_bq_table: Input[Artifact]
-        Input metadata with references to the project ID, dataset ID and table
-        ID where BQ table was imported.
+        Input metadata with references to the project ID, dataset ID and 
+        table ID where BQ table was imported.
         Usage:
             output_bq_table.metadata['bq_project']
                 .example: 'my_project'
@@ -688,7 +694,7 @@ def load_bq_to_feature_store_op(
     feature_specs = []
 
     mapping = {
-        'int32': feature_pb2.Feature.ValueType.INT64,
+        'int32': feature_pb2.Feature.ValueType.DOUBLE,
         'hex': feature_pb2.Feature.ValueType.INT64
     }
 
