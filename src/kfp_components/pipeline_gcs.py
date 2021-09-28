@@ -28,7 +28,7 @@ def preprocessing_pipeline_gcs(
     valid_paths: list,
     output_path: str,
     columns: list,
-    cols_dtype: list,
+    cols_dtype: dict,
     sep: str,
     gpus: str,
     workflow_path: str,

@@ -17,7 +17,7 @@
 import kfp_components
 from kfp.v2 import dsl
 
-PIPELINE_NAME = 'nvt-pipeline-gcs-feat'
+PIPELINE_NAME = 'pipeline-nvt-gcs-feat'
 
 
 @dsl.pipeline(
