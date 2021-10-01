@@ -29,8 +29,8 @@ export ACCELERATOR_NUM=2
 
 export TRAIN_DATA="/gcs/jk-criteo-bucket/criteo_processed/output/train/_file_list.txt"
 export VALID_DATA="/gcs/jk-criteo-bucket/criteo_processed/output/valid/_file_list.txt"
-export MAX_ITER=0
-export NUM_EPOCHS=1
+export MAX_ITER=5000
+export NUM_EPOCHS=0
 export PER_GPU_BATCH_SIZE=2048
 export SLOT_SIZE_ARRAY="[2839307,28141,15313,7229,19673,4,6558,1297,63,2156343,327548,178478,11,2208,9517,73,4,957,15,2893928,1166099,2636476,211349,10776,92,35]"
 export SNAPSHOT=0

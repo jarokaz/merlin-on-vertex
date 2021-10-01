@@ -1,0 +1,52 @@
+## Data preparation 
+
+This is a temporary set of scripts to locally preprocess the Criteo dataset for HugeCTR (and other) training. The samples will be obsoleted when the NVT KFP pipelines are ready.
+
+All the processing is done locally on data in PD.
+
+### Convert the original Criteo dataset in the TSV format to parquet
+
+```
+docker run -it --rm --gpus all \
+-v /home/jupyter/merlin-on-vertex/src/vertex_training/dataprep:/src \
+-w /src \
+-v /home/jupyter/data:/criteo_data \
+nvcr.io/nvidia/merlin/merlin-training:21.09 \
+python convert_to_parquet.py \
+--input_path /criteo_data/criteo_tsv \
+--output_path /criteo_data/criteo_parquet \
+--dask_path /criteo_data/dask-workspace \
+--devices 0,1,2,3 \
+--protocol tcp \
+--device_limit_frac 0.8 \
+--device_pool_frac 0.9 \
+--part_mem_frac 0.125
+```
+
+### Preprocess the Criteo parquet files
+```
+docker run -it --rm --gpus all \
+-v /home/jupyter/merlin-on-vertex/src/vertex_training/dataprep:/src \
+-w /src \
+-v /home/jupyter/data:/criteo_data \
+nvcr.io/nvidia/merlin/merlin-training:21.09 \
+python preprocess_nvt.py \
+--train_folder /criteo_data/train \
+--valid_folder /criteo_data/valid \
+--output_folder /criteo_data/output \
+--devices 0,1,2,3 \
+--protocol tcp \
+--device_limit_frac 0.8 \
+--device_pool_frac 0.9 \
+--num_io_threads 4 \
+--part_mem_frac 0.08 \
+--out_files_per_proc 8 \
+--freq_limit 6 \
+--shuffle PER_PARTITION
+```
+
+### Reshard the preprocessed files
+
+```
+
+```

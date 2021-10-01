@@ -47,7 +47,7 @@ def submit_job(args):
             "replica_count": 1,
             "container_spec": {
                 "image_uri": args.train_image,
-                "command": ["python", "train.py"],
+                "command": ["python", "-m", TRAINING_MODULE],
                 "args": [
                     '--batchsize=' + str(batchsize),
                     '--train_data=' + args.train_data, 
