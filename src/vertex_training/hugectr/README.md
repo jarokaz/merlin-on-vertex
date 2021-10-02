@@ -77,11 +77,16 @@ Categorical features cardinalities for day_0 - day_2 datasets
 '2839307,28141,15313,7229,19673,4,6558,1297,63,2156343,327548,178478,11,2208,9517,73,4,957,15,2893928,1166099,2636476,211349,10776,92,35'
 ```
 
+Cardinatilities based on day_0 - day_22
+
+```
+[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]
+```
 
 
 docker run -it --rm --gpus all --cap-add SYS_NICE \
 -v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
--v /home/jupyter/criteo_processed:/criteo_data \
+-v /home/jupyter/data:/criteo_data \
 -w /src \
 nvcr.io/nvidia/merlin/merlin-training:21.09 \
 python -m trainer.train \
@@ -90,12 +95,12 @@ python -m trainer.train \
 --eval_interval=600 \
 --batchsize=8192 \
 --snapshot=0 \
---train_data=/criteo_data/output/train/_file_list.txt  \
---valid_data=/criteo_data/output/valid/_file_list.txt  \
+--train_data=/criteo_data/criteo_processed_parquet/train/_file_list.txt  \
+--valid_data=/criteo_data/criteo_processed_parquet/valid/_file_list.txt  \
 --display_interval=200 \
 --workspace_size_per_gpu=1 \
---slot_size_array="[2839307,28141,15313, 7229, 19673, 4, 6558, 1297, 63, 2156343, 327548, 178478, 11, 2208, 9517, 73, 4, 957, 15, 2893928, 1166099, 2636476, 211349, 10776, 92, 35]" \
---gpus="[[0,1]]"
+--slot_size_array="[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]" \
+--gpus="[[0,1,2,3]]"
 ```
 
 
