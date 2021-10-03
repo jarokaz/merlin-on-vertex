@@ -83,7 +83,7 @@ Cardinatilities based on day_0 - day_22
 [18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]
 ```
 
-
+```
 docker run -it --rm --gpus all --cap-add SYS_NICE \
 -v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
 -v /home/jupyter/data:/criteo_data \
@@ -159,7 +159,7 @@ python train.py \
 --gpus=0,1
 ```
 
-```
+
 ```
 docker run -it --rm --gpus all --cap-add SYS_NICE \
 -v /home/jupyter/criteo_processed:/criteo_processed \
