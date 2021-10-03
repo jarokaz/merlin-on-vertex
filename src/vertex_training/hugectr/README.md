@@ -1,7 +1,46 @@
 # Using NVIDIA HugeCTR with Vertex Training
 
+## Local testing
 
-## Build a training container
+
+Categorical features cardinalities for day_0 - day_2 datasets
+
+
+```
+[2839307, 28141, 15313, 7229, 19673, 4, 6558, 1297, 63, 2156343, 327548, 178478, 11, 2208, 9517, 73, 4, 957, 15, 2893928, 1166099, 2636476, 211349, 10776, 92, 35]
+
+'2839307,28141,15313,7229,19673,4,6558,1297,63,2156343,327548,178478,11,2208,9517,73,4,957,15,2893928,1166099,2636476,211349,10776,92,35'
+```
+
+Cardinatilities based on day_0 - day_22
+
+```
+[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]
+```
+
+```
+docker run -it --rm --gpus all --cap-add SYS_NICE \
+-v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
+-v /home/jupyter/data:/criteo_data \
+-w /src \
+nvcr.io/nvidia/merlin/merlin-training:21.09 \
+python -m trainer.train \
+--num_epochs 0 \
+--max_iter 50000 \
+--eval_interval=600 \
+--batchsize=8192 \
+--snapshot=0 \
+--train_data=/criteo_data/criteo_processed_parquet/train/_file_list.txt  \
+--valid_data=/criteo_data/criteo_processed_parquet/valid/_file_list.txt  \
+--display_interval=200 \
+--workspace_size_per_gpu=1 \
+--slot_size_array="[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]" \
+--gpus="[[0,1]]"
+```
+
+## Submitting Vertex training jobs
+
+### Build a training container
 
 ```
 export PROJECT_ID=jk-mlops-dev
@@ -11,7 +50,7 @@ docker build -t ${IMAGE_NAME} .
 docker push ${IMAGE_NAME} 
 ```
 
-## Create Vertex AI staging bucket 
+### Create Vertex AI staging bucket 
 
 ```
 export REGION=us-central1
@@ -19,7 +58,7 @@ export GCS_STAGING_BUCKET=gs://jk-vertex-merlin
 
 gsutil mb -l ${REGION} ${GCS_STAGING_BUCKET}
 ```
-## Submit a Vertex Training job
+### Submit a Vertex Training job
 
 ```
 export VERTEX_SA="training-sa@jk-mlops-dev.iam.gserviceaccount.com"
@@ -65,212 +104,9 @@ python submit_vertex_job.py \
 
 
 
-## Local testing
-
-
-Categorical features cardinalities for day_0 - day_2 datasets
-
-
-```
-[2839307, 28141, 15313, 7229, 19673, 4, 6558, 1297, 63, 2156343, 327548, 178478, 11, 2208, 9517, 73, 4, 957, 15, 2893928, 1166099, 2636476, 211349, 10776, 92, 35]
-
-'2839307,28141,15313,7229,19673,4,6558,1297,63,2156343,327548,178478,11,2208,9517,73,4,957,15,2893928,1166099,2636476,211349,10776,92,35'
-```
-
-Cardinatilities based on day_0 - day_22
-
-```
-[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]
-```
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
--v /home/jupyter/data:/criteo_data \
--w /src \
-nvcr.io/nvidia/merlin/merlin-training:21.09 \
-python -m trainer.train \
---num_epochs 0 \
---max_iter 50000 \
---eval_interval=600 \
---batchsize=8192 \
---snapshot=0 \
---train_data=/criteo_data/criteo_processed_parquet/train/_file_list.txt  \
---valid_data=/criteo_data/criteo_processed_parquet/valid/_file_list.txt  \
---display_interval=200 \
---workspace_size_per_gpu=1 \
---slot_size_array="[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]" \
---gpus="[[0,1]]"
-```
 
 
 
-```
-docker build -t gcr.io/jk-mlops-dev/merlin-train .
-docker push gcr.io/jk-mlops-dev/merlin-train
-```
-
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /mnt/disks/criteo:/data \
--v /home/jupyter/src/merlin-sandbox:/src \
-nvcr.io/nvidia/merlin/merlin-training:0.6 \
-python /src/hugectr/train/criteo_parquet.py
-```
-
-```
-docker run -it --rm --gpus all \
--v /mnt/disks/criteo:/data \
--v /home/jupyter/src:/src \
-nvcr.io/nvidia/merlin/merlin-training:0.6 \
-python /src/merlin-sandbox/hugectr/train/train.py
-```
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /mnt/disks/criteo:/criteo_data \
-gcr.io/jk-mlops-dev/merlin-train \
-python train.py \
---max_iter=100000 \
---eval_interval=1000 \
---batchsize=2048 \
---train_data=/criteo_data/criteo_processed/train/_file_list.txt \
---valid_data=/criteo_data/criteo_processed/valid/_file_list.txt \
---workspace_size_per_gpu=2000 \
---display_interval=500 \
---gpus=0,1
-```
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /mnt/disks/criteo:/criteo_data \
-gcr.io/jk-mlops-dev/merlin-train \
-python train.py \
---num_epochs 1 \
---max_iter 500000 \
---eval_interval=5000 \
---batchsize=4096 \
---snapshot=0 \
---train_data=/criteo_data/criteo_processed/train/_file_list.txt \
---valid_data=/criteo_data/criteo_processed/valid/_file_list.txt \
---workspace_size_per_gpu=9000 \
---display_interval=1000 \
---gpus=0,1
-```
-
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/criteo_processed:/criteo_processed \
-gcr.io/jk-mlops-dev/merlin-train \
-python train.py \
---num_epochs 1 \
---max_iter 500000 \
---eval_interval=5000 \
---batchsize=2048 \
---snapshot=0 \
---train_data=/criteo_processed/train/_file_list.txt \
---valid_data=/criteo_processed/valid/_file_list.txt \
---workspace_size_per_gpu=9000 \
---display_interval=1000 \
---gpus=0
-```
-```
 
 
 
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /mnt/disks/criteo:/data \
-gcr.io/jk-mlops-dev/merlin-train \
-python train.py \
---max_iter=5000 \
---eval_interval=500 \
---batchsize=2048 \
---train_data=gs://jk-vertex-us-central1/criteo_data/train/_file_list.txt \
---valid_data=gs://jk-vertex-us-central1/criteo_data/valid/_file_list.txt \
---gpus=0,1
-```
-
-
-
-## Create filestore
-
-```
-gcloud beta filestore instances create nfs-server \
---zone=us-central1-a \
---tier=BASIC_SDD \
---file-share=name="vol1",capacity=2TB \
---network=name="default"
-```
-
-
-# Train
-
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-sandbox/hugectr/train:/src \
--v /home/jupyter/criteo_processed:/criteo_data \
-nvcr.io/nvidia/merlin/merlin-training:0.6 \
-python /src/dcn_parquet.py 
-```
-
-
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-sandbox/hugectr/train:/src \
--v /home/jupyter/criteo_processed:/criteo_data \
-nvcr.io/nvidia/merlin/merlin-training:0.6 \
-python /src/train.py \
---num_epochs 1 \
---max_iter 500000 \
---eval_interval=7000 \
---batchsize=4096 \
---snapshot=0 \
---train_data=/criteo_data/output/train/_file_list.txt  \
---valid_data=/criteo_data/output/valid/_file_list.txt  \
---display_interval=1000 \
---workspace_size_per_gpu=2000 \
---gpus=0,1
-```
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-sandbox/hugectr/train:/src \
--v /home/jupyter/criteo_processed:/criteo_data \
--w /src \
-nvcr.io/nvidia/merlin/merlin-training:0.6 \
-python -m trainer.task \
---num_epochs 1 \
---max_iter 50000 \
---eval_interval=600 \
---batchsize=4096 \
---snapshot=0 \
---train_data=/criteo_data/output/train/_file_list.txt  \
---valid_data=/criteo_data/output/valid/_file_list.txt  \
---display_interval=200 \
---workspace_size_per_gpu=1 \
---slot_size_array="[2839307, 28141, 15313, 7229, 19673, 4, 6558, 1297, 63, 2156343, 327548, 178478, 11, 2208, 9517, 73, 4, 957, 15, 2893928, 1166099, 2636476, 211349, 10776, 92, 35]" \
---gpus="[[0]]"
-```
-
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE --network host \
--v /home/jupyter/criteo_processed:/criteo_data \
-gcr.io/jk-mlops-dev/merlin-train \
-python -m trainer.task \
---num_epochs 1 \
---max_iter 50000 \
---eval_interval=600 \
---batchsize=16384 \
---snapshot=0 \
---train_data=/criteo_data/output/train/_file_list.txt  \
---valid_data=/criteo_data/output/valid/_file_list.txt  \
---display_interval=200 \
---workspace_size_per_gpu=1 \
---slot_size_array="[2839307, 28141, 15313, 7229, 19673, 4, 6558, 1297, 63, 2156343, 327548, 178478, 11, 2208, 9517, 73, 4, 957, 15, 2893928, 1166099, 2636476, 211349, 10776, 92, 35]" \
---gpus="[[0,1,2,3]]"
-```
