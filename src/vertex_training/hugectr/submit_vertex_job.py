@@ -65,7 +65,6 @@ def submit_job(args):
         }
     ]
 
-
     job_name = 'HUGECTR_{}'.format(time.strftime("%Y%m%d_%H%M%S"))
 
     logging.info(f'Starting job: {job_name}')

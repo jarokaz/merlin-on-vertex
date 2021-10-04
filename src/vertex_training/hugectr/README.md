@@ -38,6 +38,27 @@ python -m trainer.train \
 --gpus="[[0,1]]"
 ```
 
+
+```
+docker run -it --rm --gpus all --cap-add SYS_NICE \
+-v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
+-v /home/jupyter/data:/criteo_data \
+-w /src \
+nvcr.io/nvidia/merlin/merlin-training:21.09 \
+python -m trainer.train \
+--num_epochs 0 \
+--max_iter 50000 \
+--eval_interval=1000 \
+--batchsize=8192 \
+--snapshot=0 \
+--train_data=/criteo_data/criteo_processed/output/train/_file_list.txt  \
+--valid_data=/criteo_data/criteo_processed/output/valid/_file_list.txt  \
+--display_interval=200 \
+--workspace_size_per_gpu=61 \
+--slot_size_array="[2839307, 28141, 15313, 7229, 19673, 4, 6558, 1297, 63, 2156343, 327548, 178478, 11, 2208, 9517, 73, 4, 957, 15, 2893928, 1166099, 2636476, 211349, 10776, 92, 35]" \
+--gpus="[[0,1]]"
+```
+
 ## Submitting Vertex training jobs
 
 ### Build a training container
