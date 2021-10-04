@@ -33,9 +33,9 @@ python -m trainer.train \
 --train_data=/criteo_data/criteo_processed_parquet/train/_file_list.txt  \
 --valid_data=/criteo_data/criteo_processed_parquet/valid/_file_list.txt  \
 --display_interval=200 \
---workspace_size_per_gpu=1 \
+--workspace_size_per_gpu=61 \
 --slot_size_array="[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]" \
---gpus="[[0,1]]"
+--gpus="[[0,1,2,3]]"
 ```
 
 
@@ -83,9 +83,9 @@ gsutil mb -l ${REGION} ${GCS_STAGING_BUCKET}
 
 ```
 export VERTEX_SA="training-sa@jk-mlops-dev.iam.gserviceaccount.com"
-export MACHINE_TYPE=a2-highgpu-2g
+export MACHINE_TYPE=a2-highgpu-4g
 export ACCELERATOR_TYPE=NVIDIA_TESLA_A100
-export ACCELERATOR_NUM=2
+export ACCELERATOR_NUM=4
 
 export TRAIN_DATA="/gcs/jk-criteo-bucket/criteo_processed/output/train/_file_list.txt"
 export VALID_DATA="/gcs/jk-criteo-bucket/criteo_processed/output/valid/_file_list.txt"
