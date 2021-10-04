@@ -27,7 +27,7 @@ nvcr.io/nvidia/merlin/merlin-training:21.09 \
 python -m trainer.train \
 --num_epochs 0 \
 --max_iter 50000 \
---eval_interval=600 \
+--eval_interval=1000 \
 --batchsize=8192 \
 --snapshot=0 \
 --train_data=/criteo_data/criteo_processed_parquet/train/_file_list.txt  \
@@ -87,12 +87,12 @@ export MACHINE_TYPE=a2-highgpu-4g
 export ACCELERATOR_TYPE=NVIDIA_TESLA_A100
 export ACCELERATOR_NUM=4
 
-export TRAIN_DATA="/gcs/jk-criteo-bucket/criteo_processed/output/train/_file_list.txt"
-export VALID_DATA="/gcs/jk-criteo-bucket/criteo_processed/output/valid/_file_list.txt"
+export TRAIN_DATA="/gcs/jk-criteo-bucket/criteo_processed_parquet/train/_file_list.txt"
+export VALID_DATA="/gcs/jk-criteo-bucket/criteo_processed_parquet/valid/_file_list.txt"
 export MAX_ITER=5000
 export NUM_EPOCHS=0
 export PER_GPU_BATCH_SIZE=2048
-export SLOT_SIZE_ARRAY="[2839307,28141,15313,7229,19673,4,6558,1297,63,2156343,327548,178478,11,2208,9517,73,4,957,15,2893928,1166099,2636476,211349,10776,92,35]"
+export SLOT_SIZE_ARRAY="[18792578,35176,17091,7383,20154,4,7075,1403,63,12687136,1054830,297377,11,2209,10933,113,4,972,15,19550853,5602712,16779972,375290,12292,101,35]"
 export SNAPSHOT=0
 export EVAL_INTERVAL=1000
 export DISPLAY_INTERVAL=200
