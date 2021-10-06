@@ -2,7 +2,7 @@
 
 This is a working repo for development of NVIDIA Merlin on GCP solution
 
-![NVIDIA Merlin](images/nvidia-merlin.png)
+![NVIDIA Merlin](images/merlin_vertexai.png)
 
 
 
