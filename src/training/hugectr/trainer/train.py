@@ -32,6 +32,10 @@ def main(args):
     model = create_model(
         train_data=[args.train_data],
         valid_data=args.valid_data,
+        dropout_rage=args.dropout_rate,
+        num_dense_features=args.num_dense_features,
+        num_sparse_features=args.num_sparse_features,
+        num_workers=args.num_workers,
         slot_size_array=args.slot_size_array,
         batchsize=args.batchsize,
         lr=args.lr,
@@ -63,6 +67,27 @@ def parse_args():
                         type=str,
                         required=True,
                         help='Path to validation data _file_list.txt')
+    parser.add_argument('--dropout_rate',
+                        type=float,
+                        required=False,
+                        default=0.5,
+                        help='Dropout rate')
+    parser.add_argument('--num_dense_features',
+                        type=int,
+                        required=False,
+                        default=13,
+                        help='Number of dense features')
+    parser.add_argument('--num_sparse_features',
+                        type=int,
+                        required=False,
+                        default=26,
+                        help='Number of sparse features')
+    parser.add_argument('--lr',
+                        type=float,
+                        required=False,
+                        default=0.001,
+                        help='Learning rate')
+    
     parser.add_argument('-i',
                         '--max_iter',
                         type=int,
@@ -111,11 +136,12 @@ def parse_args():
                         required=False,
                         default=1000,
                         help='Workspace size per gpu in MB')
-    parser.add_argument('--lr',
-                        type=float,
+    parser.add_argument('--num_workers',
+                        type=int,
                         required=False,
-                        default=0.001,
-                        help='Learning rate')
+                        default=12,
+                        help='Number of workers')
+
 
     args = parser.parse_args()
 
