@@ -11,7 +11,7 @@ Cardinatilities based on day_0 - day_22
 
 ```
 docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
+-v /home/jupyter/merlin-on-vertex/src/training/hugectr:/src \
 -v /home/jupyter/data:/criteo_data \
 -w /src \
 nvcr.io/nvidia/merlin/merlin-training:21.09 \
@@ -25,29 +25,11 @@ python -m trainer.train \
 --valid_data=/criteo_data/criteo_processed_parquet/valid/_file_list.txt  \
 --display_interval=500 \
 --workspace_size_per_gpu=61 \
---slot_size_array="[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]" \
+--slot_size_array="[19615168, 35248, 17095, 7383, 20154, 4, 7075, 1404, 63, 13203982, 1077816, 300012, 11, 2209, 10942, 114, 4, 972, 15, 20417762, 5796980, 17498794, 379315, 12311, 103, 35]" \
 --gpus="[[0,1,2,3]]"
 ```
 
-```
-docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
--v /home/jupyter/data:/criteo_data \
--w /src \
-nvcr.io/nvidia/merlin/merlin-training:21.09 \
-python -m trainer.train \
---num_epochs 0 \
---max_iter 50000 \
---eval_interval=5000 \
---batchsize=16384 \
---snapshot=0 \
---train_data=/criteo_data/criteo_processed_parquet/train/_file_list.txt  \
---valid_data=/criteo_data/criteo_processed_parquet/valid/_file_list.txt  \
---display_interval=500 \
---workspace_size_per_gpu=61 \
---slot_size_array="[18792578, 35176, 17091, 7383, 20154, 4, 7075, 1403, 63, 12687136, 1054830, 297377, 11, 2209, 10933, 113, 4, 972, 15, 19550853, 5602712, 16779972, 375290, 12292, 101, 35]" \
---gpus="[[0,1,2,3,4,5,6,7]]"
-```
+
 
 
 
