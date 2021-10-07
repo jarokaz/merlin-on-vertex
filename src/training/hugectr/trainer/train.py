@@ -32,7 +32,7 @@ def main(args):
     model = create_model(
         train_data=[args.train_data],
         valid_data=args.valid_data,
-        dropout_rage=args.dropout_rate,
+        dropout_rate=args.dropout_rate,
         num_dense_features=args.num_dense_features,
         num_sparse_features=args.num_sparse_features,
         num_workers=args.num_workers,
