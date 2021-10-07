@@ -24,7 +24,7 @@ python -m trainer.train \
 --train_data=/criteo_data/criteo_processed_parquet/train/_file_list.txt  \
 --valid_data=/criteo_data/criteo_processed_parquet/valid/_file_list.txt  \
 --display_interval=500 \
---workspace_size_per_gpu=61 \
+--workspace_size_per_gpu=300 \
 --slot_size_array="[19615168, 35248, 17095, 7383, 20154, 4, 7075, 1404, 63, 13203982, 1077816, 300012, 11, 2209, 10942, 114, 4, 972, 15, 20417762, 5796980, 17498794, 379315, 12311, 103, 35]" \
 --gpus="[[0,1,2,3]]"
 ```
