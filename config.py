@@ -3,6 +3,7 @@ BASE_IMAGE_NAME = 'us-east1-docker.pkg.dev/renatoleite-mldemos/docker-images/nvt
 PROJECT_ID = 'renatoleite-mldemos'
 REGION = 'us-central1'
 BUCKET = 'renatoleite-criteo-partial'
+LOCATION = 'us'
 
 VERTEX_PARENT = f'projects/{PROJECT_ID}/locations/{REGION}'
 
