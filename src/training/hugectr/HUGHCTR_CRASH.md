@@ -41,7 +41,7 @@ First run the test using 4 GPUs. This should work.
 
 ```
 docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
+-v /home/jupyter/merlin-on-vertex/src/training/hugectr:/src \
 -v /home/jupyter/data:/criteo_data \
 -w /src \
 nvcr.io/nvidia/merlin/merlin-training:21.09 \
@@ -63,7 +63,7 @@ Then run the test using 8 GPUs. This crashes.
 
 ```
 docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-on-vertex/src/vertex_training/hugectr:/src \
+-v /home/jupyter/merlin-on-vertex/src/training/hugectr:/src \
 -v /home/jupyter/data:/criteo_data \
 -w /src \
 nvcr.io/nvidia/merlin/merlin-training:21.09 \
