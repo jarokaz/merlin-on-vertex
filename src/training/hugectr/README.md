@@ -17,13 +17,13 @@ docker run -it --rm --gpus all --cap-add SYS_NICE \
 nvcr.io/nvidia/merlin/merlin-training:21.09 \
 python -m trainer.train \
 --num_epochs 0 \
---max_iter 50000 \
---eval_interval=5000 \
---batchsize=8192 \
+--max_iter 10000 \
+--eval_interval=1000 \
+--display_interval=500 \
 --snapshot=0 \
+--batchsize=8192 \
 --train_data=/criteo_data/criteo_processed_parquet/train/_file_list.txt  \
 --valid_data=/criteo_data/criteo_processed_parquet/valid/_file_list.txt  \
---display_interval=500 \
 --workspace_size_per_gpu=300 \
 --dropout_rate=0.5 \
 --num_workers=12 \

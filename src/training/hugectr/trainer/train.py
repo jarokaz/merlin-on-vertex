@@ -43,6 +43,9 @@ def main(args):
         repeat_dataset=repeat_dataset)
 
     model.summary()
+    
+    print("********* Before training ***********")
+    print(os.listdir(os.getcwd()))
 
     model.fit(
         num_epochs=args.num_epochs,
@@ -51,7 +54,9 @@ def main(args):
         eval_interval=args.eval_interval, 
         snapshot=args.snapshot, 
         snapshot_prefix=SNAPSHOT_PREFIX)
-
+    
+    print("********* After training ***********")
+    print(os.listdir(os.getcwd()))
 
 def parse_args():
     """Parses command line arguments."""
