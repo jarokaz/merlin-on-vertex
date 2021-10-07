@@ -8,7 +8,7 @@ All the processing is done locally on data in PD.
 
 ```
 docker run -it --rm --gpus all \
--v /home/jupyter/merlin-on-vertex/src/vertex_training/dataprep:/src \
+-v /home/jupyter/merlin-on-vertex/src/training/dataprep:/src \
 -w /src \
 -v /home/jupyter/data:/criteo_data \
 nvcr.io/nvidia/merlin/merlin-training:21.09 \
