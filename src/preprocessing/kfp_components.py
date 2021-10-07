@@ -125,9 +125,6 @@ def convert_csv_to_parquet_op(
     fs_spec = fsspec.filesystem('gs')
     rec_symbol = '**' if recursive else '*'
 
-    TRAIN_SPLIT_FOLDER = 'train'
-    VALID_SPLIT_FOLDER = 'valid'
-
     logging.info('Creating a Dask CUDA cluster')
     cluster = LocalCUDACluster(
         rmm_pool_size=get_rmm_size(0.8 * device_mem_size())
@@ -135,7 +132,7 @@ def convert_csv_to_parquet_op(
     client = Client(cluster)
 
     for folder_name, data_paths in zip(
-        [TRAIN_SPLIT_FOLDER, VALID_SPLIT_FOLDER], 
+        ['train', 'valid'], 
         [train_paths, valid_paths]
     ):
         valid_paths = []
@@ -161,7 +158,8 @@ def convert_csv_to_parquet_op(
             names=columns,
             sep=sep,
             dtypes=converted_col_dtype,
-            client=client
+            client=client,
+            assume_missing=True
         )
 
         full_output_path = os.path.join(output_path, folder_name)
@@ -388,10 +386,9 @@ def export_parquet_from_bq_op(
         Output metadata with the GCS path for the exported datasets.
         Usage:
             output_datasets.metadata['train']
-                .example: '/gcs/bucket_name/subfolder/train/'
+                .example: 'gs://bucket_name/subfolder/train/'
     output_path: str
-        Path to write the exported parquet files. Note it must 
-        start with gs://.
+        Path to write the exported parquet files.
         Format:
             'gs://<bucket_name>/<subfolder1>/<subfolder>/'
     bq_project: str
@@ -418,9 +415,6 @@ def export_parquet_from_bq_op(
 
     logging.basicConfig(level=logging.INFO)
 
-    TRAIN_SPLIT_FOLDER = 'train'
-    VALID_SPLIT_FOLDER = 'valid'
-
     extract_job_config = bigquery.ExtractJobConfig()
     extract_job_config.destination_format = 'PARQUET'
 
@@ -428,11 +422,10 @@ def export_parquet_from_bq_op(
     dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_id)
 
     for folder_name, table_id in zip(
-        [TRAIN_SPLIT_FOLDER, VALID_SPLIT_FOLDER], 
+        ['train', 'valid'], 
         [bq_table_train, bq_table_valid]
     ):
         bq_glob_path = os.path.join(
-            'gs://',
             output_path,
             folder_name,
             f'{folder_name}-*.parquet'
@@ -448,7 +441,7 @@ def export_parquet_from_bq_op(
         )
         extract_job.result()
         
-        full_output_path = os.path.join('/gcs', output_path, folder_name)
+        full_output_path = os.path.join(output_path, folder_name)
         logging.info(
             f'Saving metadata for {folder_name} path: {full_output_path}'
         )
