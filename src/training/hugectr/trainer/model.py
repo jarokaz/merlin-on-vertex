@@ -25,10 +25,15 @@ def create_model(
     valid_data: str,
     slot_size_array: List[int],
     max_eval_batches: int=300,
-    batchsize: int=16384,
+    batchsize: int=2048,
     lr: float=0.001,
+    dropout_rate: float=0.5,
     gpus: list=[[0]],
-    repeat_dataset: bool=False,
+    workspace_size_per_gpu: float=61,
+    num_dense_features: int=13,
+    num_sparse_features: int=26,
+    num_workers: int=12,
+    repeat_dataset: bool=True,
 ):
     """Implements DeepFM Network (https://www.ijcai.org/Proceedings/2017/0239.pdf)."""
 
@@ -44,7 +49,8 @@ def create_model(
                                       source=train_data,
                                       eval_source=valid_data, 
                                       slot_size_array=slot_size_array,
-                                      check_type = hugectr.Check_t.Non)
+                                      check_type=hugectr.Check_t.Non,
+                                      num_workers=num_workers)
 
     optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.Adam,
                                         update_type=hugectr.Update_t.Global,
@@ -55,12 +61,12 @@ def create_model(
     model = hugectr.Model(solver, reader, optimizer)
 
     model.add(hugectr.Input(label_dim = 1, label_name = "label",
-                        dense_dim = 13, dense_name = "dense",
+                        dense_dim = num_dense_features, dense_name = "dense",
                         data_reader_sparse_param_array = 
-                        [hugectr.DataReaderSparseParam("data1", 2, False, 26)]))
+                        [hugectr.DataReaderSparseParam("data1", 2, False, num_sparse_features)]))
 
     model.add(hugectr.SparseEmbedding(embedding_type = hugectr.Embedding_t.LocalizedSlotSparseEmbeddingHash, 
-                                     workspace_size_per_gpu_in_mb = 61,
+                                     workspace_size_per_gpu_in_mb = workspace_size_per_gpu,
                                      embedding_vec_size = 11,
                                      combiner = "sum",
                                      sparse_embedding_name = "sparse_embedding1",
@@ -124,7 +130,7 @@ def create_model(
     model.add(hugectr.DenseLayer(layer_type = hugectr.Layer_t.Dropout,
                                 bottom_names = ["relu1"],
                                 top_names = ["dropout1"],
-                                dropout_rate=0.5))
+                                dropout_rate=dropout_rate))
 
     model.add(hugectr.DenseLayer(layer_type = hugectr.Layer_t.InnerProduct,
                                 bottom_names = ["dropout1"],
@@ -138,7 +144,7 @@ def create_model(
     model.add(hugectr.DenseLayer(layer_type = hugectr.Layer_t.Dropout,
                                 bottom_names = ["relu2"],
                                 top_names = ["dropout2"],
-                                dropout_rate=0.5))
+                                dropout_rate=dropout_rate))
 
     model.add(hugectr.DenseLayer(layer_type = hugectr.Layer_t.InnerProduct,
                                 bottom_names = ["dropout2"],
@@ -152,7 +158,7 @@ def create_model(
     model.add(hugectr.DenseLayer(layer_type = hugectr.Layer_t.Dropout,
                                 bottom_names = ["relu3"],
                                 top_names = ["dropout3"],
-                                dropout_rate=0.5))
+                                dropout_rate=dropout_rate))
     model.add(hugectr.DenseLayer(layer_type = hugectr.Layer_t.InnerProduct,
                                 bottom_names = ["dropout3"],
                                 top_names = ["fc4"],
