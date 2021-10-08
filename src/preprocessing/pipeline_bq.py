@@ -14,8 +14,7 @@
 
 """Preprocessing pipeline prototype."""
 
-from typing import Optional
-import kfp_components
+from . import kfp_components
 from kfp.v2 import dsl
 
 PIPELINE_NAME = 'nvt-pipeline-bq'
@@ -41,7 +40,7 @@ def preprocessing_pipeline_bq(
     export_parquet_from_bq = kfp_components.export_parquet_from_bq_op(
         bq_table_train=bq_table_train,
         bq_table_valid=bq_table_valid,
-        output_path=output_converted,
+        output_converted=output_converted,
         bq_project=bq_project,
         bq_dataset_id=bq_dataset_id,
         location=location
