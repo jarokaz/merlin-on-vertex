@@ -52,7 +52,7 @@ def save_model(model, model_dir):
 def evaluate_model(
     model_dir, 
     eval_data_source,
-    max_eval_iter,
+    num_batches,
     slot_size_array,
     max_batchsize=2048, 
     hit_rate_threshold=0.6,
@@ -79,15 +79,12 @@ def evaluate_model(
     inference_session = CreateInferenceSession(model_config_path=model_config_path, 
                                                inference_params=inference_params)
     
-    eval_results = inference_session.evaluate(num_batches=max_eval_iter,
+    eval_results = inference_session.evaluate(num_batches=num_batches,
                                               source=eval_data_source,
                                               data_reader_type=hugectr.DataReaderType_t.Parquet,
                                               check_type=hugectr.Check_t.Non,
                                               slot_size_array=slot_size_array)
-    
-    print(eval_results)
-    
-    return
+    return eval_results
                                               
                                
         
@@ -97,44 +94,40 @@ def main(args):
 
     repeat_dataset = False if args.num_epochs > 0 else True
     
-    eval_results = evaluate_model(
-            model_dir=args.model_dir, 
-            eval_data_source=args.valid_data,
-            max_eval_iter=args.max_eval_iter,
-            max_batchsize=args.batchsize,
-            slot_size_array=args.slot_size_array
-    )
-    
-    return
-
-    model = create_model(
-        train_data=[args.train_data],
-        valid_data=args.valid_data,
-        dropout_rate=args.dropout_rate,
-        num_dense_features=args.num_dense_features,
-        num_sparse_features=args.num_sparse_features,
-        num_workers=args.num_workers,
-        slot_size_array=args.slot_size_array,
-        batchsize=args.batchsize,
-        lr=args.lr,
-        gpus=args.gpus,
-        repeat_dataset=repeat_dataset)
+    model = create_model(train_data=[args.train_data],
+                         valid_data=args.valid_data,
+                         max_eval_batches=args.max_eval_batches,
+                         dropout_rate=args.dropout_rate,
+                         num_dense_features=args.num_dense_features,
+                         num_sparse_features=args.num_sparse_features,
+                         num_workers=args.num_workers,
+                         slot_size_array=args.slot_size_array,
+                         batchsize=args.batchsize,
+                         lr=args.lr,
+                         gpus=args.gpus,
+                         repeat_dataset=repeat_dataset)
 
     model.summary()
     
     logging.info('Starting model fitting')
-    model.fit(
-        num_epochs=args.num_epochs,
-        max_iter=args.max_iter,
-        display=args.display_interval, 
-        eval_interval=args.eval_interval, 
-        snapshot=args.snapshot_interval, 
-        snapshot_prefix=os.path.join(args.model_dir, SNAPSHOT_DIR, MODEL_PREFIX))
-    
-    print(model.get_eval_metrics())
+    model.fit(num_epochs=args.num_epochs,
+              max_iter=args.max_iter,
+              display=args.display_interval, 
+              eval_interval=args.eval_interval, 
+              snapshot=args.snapshot_interval, 
+              snapshot_prefix=os.path.join(args.model_dir, SNAPSHOT_DIR, MODEL_PREFIX))
     
     logging.info('Saving model')
     save_model(model, args.model_dir)
+    
+    logging.info('Starting model evaluation using {} batches ...'.format(args.eval_batches))
+    auc = evaluate_model(model_dir=args.model_dir, 
+                         eval_data_source=args.valid_data,
+                         num_batches=args.eval_batches,         
+                         max_batchsize=args.batchsize,
+                         slot_size_array=args.slot_size_array)
+    logging.info('AUC on the evaluation dataset: {}'.format(auc))
+    
     
 
 def parse_args():
@@ -178,11 +171,16 @@ def parse_args():
                         required=False,
                         default=0,
                         help='Number of training iterations')
-    parser.add_argument('--max_eval_iter',
+    parser.add_argument('--max_eval_batches',
                         type=int,
                         required=False,
                         default=100,
-                        help='Max eval batches')
+                        help='Max eval batches for evaluations during model.fit()')
+    parser.add_argument('--eval_batches',
+                        type=int,
+                        required=False,
+                        default=100,
+                        help='Number of evaluation batches for the final evaluation')
     parser.add_argument('--num_epochs',
                         type=int,
                         required=False,

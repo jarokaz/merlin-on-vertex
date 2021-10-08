@@ -17,8 +17,9 @@ docker run -it --rm --gpus all --cap-add SYS_NICE \
 nvcr.io/nvidia/merlin/merlin-training:21.09 \
 python -m trainer.task \
 --num_epochs 0 \
---max_iter 1000 \
---max_eval_iter 300 \
+--max_iter 5000 \
+--max_eval_batches 200 \
+--eval_batches 1000 \
 --eval_interval=500 \
 --display_interval=100 \
 --snapshot_interval=0 \
