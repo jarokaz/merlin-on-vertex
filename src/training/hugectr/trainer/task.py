@@ -22,7 +22,21 @@ import time
 
 from trainer.model import create_model
 
-SNAPSHOT_PREFIX = 'deepfm'
+MODEL_PREFIX = 'deepfm'
+SNAPSHOT_DIR = 'snapshots'
+GRAPH_DIR = 'graph'
+MODEL_PARAMETERS_DIR = 'parameters'
+
+
+def save_model(model, model_dir):
+    graph_config_file = os.path.join(model_dir, GRAPH_DIR, f'{MODEL_PREFIX}.json')
+    logging.info('Saving model graph to: {}'.format(graph_config_file))  
+    model.graph_to_json(graph_config_file=graph_config_file)
+    
+    parameters_path = os.path.join(model_dir, MODEL_PARAMETERS_DIR, MODEL_PREFIX)
+    logging.info('Saving model parameters to: {}'.format(parameters_path)) 
+    model.save_params_to_files(prefix=parameters_path)
+    
 
 def main(args):
     """Runs a training loop."""
@@ -43,20 +57,20 @@ def main(args):
         repeat_dataset=repeat_dataset)
 
     model.summary()
+    model.graph_to_json('graph/deepfm.json')
     
-    print("********* Before training ***********")
-    print(os.listdir(os.getcwd()))
-
+    logging.info('Starting model fitting')
     model.fit(
         num_epochs=args.num_epochs,
         max_iter=args.max_iter,
         display=args.display_interval, 
         eval_interval=args.eval_interval, 
-        snapshot=args.snapshot, 
-        snapshot_prefix=SNAPSHOT_PREFIX)
+        snapshot=args.snapshot_interval, 
+        snapshot_prefix=os.path.join(args.model_dir, SNAPSHOT_DIR, MODEL_PREFIX))
     
-    print("********* After training ***********")
-    print(os.listdir(os.getcwd()))
+    logging.info('Saving model')
+    save_model(model, args.model_dir)
+    
 
 def parse_args():
     """Parses command line arguments."""
@@ -111,11 +125,16 @@ def parse_args():
                         default=16384,
                         help='Batch size')
     parser.add_argument('-s',
-                        '--snapshot',
+                        '--snapshot_interval',
                         type=int,
                         required=False,
                         default=10000,
                         help='Saves a model snapshot after given number of iterations')
+    parser.add_argument('--model_dir',
+                        type=str,
+                        required=False,
+                        default="/tmp/model",
+                        help='A base directory for snaphosts and saved model.')  
     parser.add_argument('--gpus',
                         type=str,
                         required=False,
