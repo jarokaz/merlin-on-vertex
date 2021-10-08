@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import time
+import shutil
 
 
 from trainer.model import create_model
@@ -29,10 +30,18 @@ MODEL_PARAMETERS_DIR = 'parameters'
 
 
 def save_model(model, model_dir):
-    graph_config_file = os.path.join(model_dir, GRAPH_DIR, f'{MODEL_PREFIX}.json')
-    logging.info('Saving model graph to: {}'.format(graph_config_file))  
-    model.graph_to_json(graph_config_file=graph_config_file)
+    """Saves model graph and model parameters."""
     
+    graph_path = os.path.join(model_dir, GRAPH_DIR)
+    if os.path.isdir(graph_path):
+        shutil.rmtree(graph_path)
+    os.makedirs(graph_path)
+                     
+    graph_path = os.path.join(graph_path, f'{MODEL_PREFIX}.json')
+    logging.info('Saving model graph to: {}'.format(graph_path))  
+    
+    model.graph_to_json(graph_config_file=graph_path)
+   
     parameters_path = os.path.join(model_dir, MODEL_PARAMETERS_DIR, MODEL_PREFIX)
     logging.info('Saving model parameters to: {}'.format(parameters_path)) 
     model.save_params_to_files(prefix=parameters_path)
@@ -57,7 +66,6 @@ def main(args):
         repeat_dataset=repeat_dataset)
 
     model.summary()
-    model.graph_to_json('graph/deepfm.json')
     
     logging.info('Starting model fitting')
     model.fit(
