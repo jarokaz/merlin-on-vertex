@@ -14,7 +14,7 @@
 
 """Preprocessing pipeline prototype."""
 
-from . import kfp_components
+from ..preprocessing import kfp_components
 from kfp.v2 import dsl
 
 PIPELINE_NAME = 'nvt-gcs-pipeline'

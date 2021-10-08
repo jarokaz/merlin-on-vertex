@@ -14,6 +14,7 @@
 
 """Preprocessing components"""
 
+import os
 from kfp.v2 import dsl
 from kfp.v2.dsl import (
     Artifact, 
@@ -28,12 +29,10 @@ from kfp.v2.dsl import (
 from typing import Optional
 import sys
 
-# Access to config file
-sys.path.insert(1, '../../')
-import config
+IMAGE_URI = os.environ['IMAGE_URI']
 
 @dsl.component(
-    base_image=config.BASE_IMAGE_NAME
+    base_image=IMAGE_URI
 )
 def convert_csv_to_parquet_op(
     output_datasets: Output[Dataset],
@@ -181,7 +180,7 @@ def convert_csv_to_parquet_op(
 
 
 @dsl.component(
-    base_image=config.BASE_IMAGE_NAME
+    base_image=IMAGE_URI
 )
 def fit_dataset_op(
     datasets: Input[Dataset],
@@ -276,7 +275,7 @@ def fit_dataset_op(
 
 
 @dsl.component(
-    base_image=config.BASE_IMAGE_NAME
+    base_image=IMAGE_URI
 )
 def transform_dataset_op(
     fitted_workflow: Input[Artifact],
@@ -378,7 +377,9 @@ def transform_dataset_op(
         fitted_workflow.metadata.get('datasets')
 
 
-@dsl.component(base_image=config.BASE_IMAGE_NAME)
+@dsl.component(
+    base_image=IMAGE_URI
+)
 def export_parquet_from_bq_op(
     output_datasets: Output[Dataset],
     output_converted: str,
