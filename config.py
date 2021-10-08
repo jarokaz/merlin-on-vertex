@@ -7,8 +7,8 @@ LOCATION = 'us'
 
 VERTEX_PARENT = f'projects/{PROJECT_ID}/locations/{REGION}'
 
-SAVED_WORKFLOW_PATH = f'{BUCKET}/saved_workflow/' # Where to write the converted PARQUET files
-OUTPUT_CONVERTED = f'{BUCKET}/converted/' # Location to write the transformed data
-OUTPUT_TRANSFORMED = f'{BUCKET}/transformed_data/'
+SAVED_WORKFLOW_PATH = f'{BUCKET}/saved_workflow' # Where to write the converted PARQUET files
+OUTPUT_CONVERTED = f'{BUCKET}/converted' # Location to write the transformed data
+OUTPUT_TRANSFORMED = f'{BUCKET}/transformed_data'
 
 STAGING_BUCKET = f'gs://{BUCKET}/temp'
