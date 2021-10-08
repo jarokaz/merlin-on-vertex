@@ -14,46 +14,43 @@
 
 """Preprocessing pipeline prototype."""
 
-from . import kfp_components
+from ..preprocessing import kfp_components
 from kfp.v2 import dsl
 
-PIPELINE_NAME = 'nvt-gcs-pipeline'
+PIPELINE_NAME = 'nvt-pipeline-bq'
 
 
 @dsl.pipeline(
     name=PIPELINE_NAME
 )
-def preprocessing_pipeline_gcs(
-    train_paths: list,
-    valid_paths: list,
+def preprocessing_pipeline_bq(
+    bq_table_train: str,
+    bq_table_valid: str,
     output_converted: str,
-    columns: list,
-    cols_dtype: dict,
-    sep: str,
+    bq_project: str,
+    bq_dataset_id: str,
+    location: str,
     gpus: str,
     workflow_path: str,
     output_transformed: str,
     shuffle: str,
     recursive: bool
 ):
-    # === Convert CSV to Parquet
-    convert_csv_to_parquet = kfp_components.convert_csv_to_parquet_op(
-        train_paths=train_paths,
-        valid_paths=valid_paths,
+    # === Export Bigquery tables as PARQUET files
+    export_parquet_from_bq = kfp_components.export_parquet_from_bq_op(
+        bq_table_train=bq_table_train,
+        bq_table_valid=bq_table_valid,
         output_converted=output_converted,
-        columns=columns,
-        cols_dtype=cols_dtype,
-        sep=sep,
-        gpus=gpus,
+        bq_project=bq_project,
+        bq_dataset_id=bq_dataset_id,
+        location=location
     )
-    convert_csv_to_parquet.set_cpu_limit("8")
-    convert_csv_to_parquet.set_memory_limit("32G")
-    convert_csv_to_parquet.set_gpu_limit("1")
-    convert_csv_to_parquet.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
+    export_parquet_from_bq.set_cpu_limit("8")
+    export_parquet_from_bq.set_memory_limit("32G")
     
     # === Fit dataset
     fit_dataset = kfp_components.fit_dataset_op(
-        datasets=convert_csv_to_parquet.outputs['output_datasets'],
+        datasets=export_parquet_from_bq.outputs['output_datasets'],
         workflow_path=workflow_path,
         gpus=gpus
     )
