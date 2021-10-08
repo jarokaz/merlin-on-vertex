@@ -26,7 +26,7 @@ PIPELINE_NAME = 'nvt-gcs-pipeline'
 def preprocessing_pipeline_gcs(
     train_paths: list,
     valid_paths: list,
-    output_path: str,
+    output_converted: str,
     columns: list,
     cols_dtype: dict,
     sep: str,
@@ -40,7 +40,7 @@ def preprocessing_pipeline_gcs(
     convert_csv_to_parquet = kfp_components.convert_csv_to_parquet_op(
         train_paths=train_paths,
         valid_paths=valid_paths,
-        output_path=output_path,
+        output_converted=output_converted,
         columns=columns,
         cols_dtype=cols_dtype,
         sep=sep,

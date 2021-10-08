@@ -27,7 +27,7 @@ PIPELINE_NAME = 'nvt-pipeline-bq'
 def preprocessing_pipeline_bq(
     bq_table_train: str,
     bq_table_valid: str,
-    output_path: str,
+    output_converted: str,
     bq_project: str,
     bq_dataset_id: str,
     location: str,
@@ -41,7 +41,7 @@ def preprocessing_pipeline_bq(
     export_parquet_from_bq = kfp_components.export_parquet_from_bq_op(
         bq_table_train=bq_table_train,
         bq_table_valid=bq_table_valid,
-        output_path=output_path,
+        output_path=output_converted,
         bq_project=bq_project,
         bq_dataset_id=bq_dataset_id,
         location=location

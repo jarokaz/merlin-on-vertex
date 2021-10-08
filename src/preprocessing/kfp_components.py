@@ -39,7 +39,7 @@ def convert_csv_to_parquet_op(
     output_datasets: Output[Dataset],
     train_paths: list,
     valid_paths: list,
-    output_path: str,
+    output_converted: str,
     columns: list,
     cols_dtype: dict,
     sep: str,
@@ -71,10 +71,10 @@ def convert_csv_to_parquet_op(
             'gs://<bucket_name>/<subfolder1>/<subfolder>/' or
             'gs://<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or
             a combination of both.
-    output_path: str
+    output_converted: str
         Path in GCS to write the converted parquet files.
         Format:
-            'gs://<bucket_name>/<subfolder1>/<subfolder>'
+            '/gcs/<bucket_name>/<subfolder1>/<subfolder>'
     columns: list
         List with the columns name from CSV file.
         Format:
@@ -162,7 +162,7 @@ def convert_csv_to_parquet_op(
             assume_missing=True
         )
 
-        full_output_path = os.path.join(output_path, folder_name)
+        full_output_path = os.path.join('/gcs', output_converted, folder_name)
 
         logging.info(f'Writing parquet file(s) to {full_output_path}')
         if shuffle:
@@ -175,7 +175,9 @@ def convert_csv_to_parquet_op(
         )
 
         # Write output path to metadata
-        output_datasets.metadata[folder_name] = full_output_path
+        output_datasets.metadata[folder_name] = os.path.join(
+            'gs://', output_converted, folder_name
+        )
 
 
 @dsl.component(
@@ -215,7 +217,7 @@ def fit_dataset_op(
         Path to the current workflow, not fitted. This path must have 
         2 files: metadata.json and workflow.pkl.
         Format:
-            '/gcs/<bucket_name>/<subfolder1>/<subfolder>'
+            '<bucket_name>/<subfolder1>/<subfolder>'
     split_name: str
         Which dataset split to calculate the statistics. 'train' or 'valid'
     '''
@@ -251,12 +253,16 @@ def fit_dataset_op(
     client = Client(cluster)
 
     # Load Transformation steps
-    FIT_FOLDER = os.path.join(workflow_path, 'fitted_workflow')
+    FIT_FOLDER = os.path.join('/gcs', workflow_path, 'fitted_workflow')
 
     logging.info('Loading saved workflow')
-    workflow = nvt.Workflow.load(workflow_path, client)
+    workflow = nvt.Workflow.load(
+        os.path.join('/gcs', workflow_path), client
+    )
     fitted_dataset = nvt.Dataset(
-        data_path, engine="parquet", part_size=part_size
+        os.path.join(data_path, '*.parquet'),
+        engine="parquet", 
+        part_size=part_size
     )
     logging.info('Starting workflow fitting')
     workflow.fit(fitted_dataset)
@@ -306,7 +312,7 @@ def transform_dataset_op(
     output_transformed: str,
         Path in GCS to write the transformed parquet files.
         Format:
-            'gs://<bucket_name>/<subfolder1>/<subfolder>/'
+            '<bucket_name>/<subfolder1>/<subfolder>/'
     '''
 
     import logging
@@ -350,7 +356,9 @@ def transform_dataset_op(
 
     logging.info('Creating dataset definition')
     dataset = nvt.Dataset(
-        data_path, engine="parquet", part_size=part_size
+        os.path.join(data_path, '*.parquet'), 
+        engine="parquet", 
+        part_size=part_size
     )
 
     if shuffle:
@@ -364,7 +372,8 @@ def transform_dataset_op(
     )
     logging.info('Finished transformation')
 
-    transformed_dataset.metadata['transformed_dataset'] = TRANSFORM_FOLDER
+    transformed_dataset.metadata['transformed_dataset'] = \
+        os.path.join('gs://', output_transformed, split_name)
     transformed_dataset.metadata['original_datasets'] = \
         fitted_workflow.metadata.get('datasets')
 
@@ -372,7 +381,7 @@ def transform_dataset_op(
 @dsl.component(base_image=config.BASE_IMAGE_NAME)
 def export_parquet_from_bq_op(
     output_datasets: Output[Dataset],
-    output_path: str,
+    output_converted: str,
     bq_project: str,
     bq_dataset_id: str,
     bq_table_train: str,
@@ -387,10 +396,10 @@ def export_parquet_from_bq_op(
         Usage:
             output_datasets.metadata['train']
                 .example: 'gs://bucket_name/subfolder/train/'
-    output_path: str
+    output_converted: str
         Path to write the exported parquet files.
         Format:
-            'gs://<bucket_name>/<subfolder1>/<subfolder>/'
+            '<bucket_name>/<subfolder1>/<subfolder>/'
     bq_project: str
         GCP project id
         Format:
@@ -426,7 +435,8 @@ def export_parquet_from_bq_op(
         [bq_table_train, bq_table_valid]
     ):
         bq_glob_path = os.path.join(
-            output_path,
+            'gs://', 
+            output_converted,
             folder_name,
             f'{folder_name}-*.parquet'
         )
@@ -441,7 +451,7 @@ def export_parquet_from_bq_op(
         )
         extract_job.result()
         
-        full_output_path = os.path.join(output_path, folder_name)
+        full_output_path = os.path.join('gs://', output_converted, folder_name)
         logging.info(
             f'Saving metadata for {folder_name} path: {full_output_path}'
         )
