@@ -18,6 +18,7 @@ nvcr.io/nvidia/merlin/merlin-training:21.09 \
 python -m trainer.task \
 --num_epochs 0 \
 --max_iter 1000 \
+--max_eval_iter 300 \
 --eval_interval=500 \
 --display_interval=100 \
 --snapshot_interval=0 \

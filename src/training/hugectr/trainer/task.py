@@ -20,7 +20,9 @@ import os
 import time
 import shutil
 
+import hugectr
 
+from hugectr.inference import InferenceParams, CreateInferenceSession
 from trainer.model import create_model
 
 MODEL_PREFIX = 'deepfm'
@@ -47,10 +49,63 @@ def save_model(model, model_dir):
     model.save_params_to_files(prefix=parameters_path)
     
 
+def evaluate_model(
+    model_dir, 
+    eval_data_source,
+    max_eval_iter,
+    slot_size_array,
+    max_batchsize=2048, 
+    hit_rate_threshold=0.6,
+    device_id=0,
+    use_gpu_embedding_cache=True,
+    cache_size_percentage=0.6,
+    i64_input_key=True):
+    """Evaluates a model on a validation set."""
+    
+    dense_model_file = os.path.join(model_dir, MODEL_PARAMETERS_DIR, f'{MODEL_PREFIX}_dense_0.model')
+    sparse_model_files = [os.path.join(model_dir, MODEL_PARAMETERS_DIR, f'{MODEL_PREFIX}0_sparse_0.model')]
+    
+    inference_params = InferenceParams(model_name=MODEL_PREFIX,
+                                       max_batchsize=max_batchsize,
+                                       hit_rate_threshold=hit_rate_threshold,
+                                       dense_model_file=dense_model_file,
+                                       sparse_model_files=sparse_model_files,
+                                       device_id=device_id,
+                                       use_gpu_embedding_cache=use_gpu_embedding_cache,
+                                       cache_size_percentage=cache_size_percentage,
+                                       i64_input_key=i64_input_key)
+    
+    model_config_path = os.path.join(model_dir, GRAPH_DIR, f'{MODEL_PREFIX}.json')
+    inference_session = CreateInferenceSession(model_config_path=model_config_path, 
+                                               inference_params=inference_params)
+    
+    eval_results = inference_session.evaluate(num_batches=max_eval_iter,
+                                              source=eval_data_source,
+                                              data_reader_type=hugectr.DataReaderType_t.Parquet,
+                                              check_type=hugectr.Check_t.Non,
+                                              slot_size_array=slot_size_array)
+    
+    print(eval_results)
+    
+    return
+                                              
+                               
+        
+    
 def main(args):
     """Runs a training loop."""
 
     repeat_dataset = False if args.num_epochs > 0 else True
+    
+    eval_results = evaluate_model(
+            model_dir=args.model_dir, 
+            eval_data_source=args.valid_data,
+            max_eval_iter=args.max_eval_iter,
+            max_batchsize=args.batchsize,
+            slot_size_array=args.slot_size_array
+    )
+    
+    return
 
     model = create_model(
         train_data=[args.train_data],
@@ -75,6 +130,8 @@ def main(args):
         eval_interval=args.eval_interval, 
         snapshot=args.snapshot_interval, 
         snapshot_prefix=os.path.join(args.model_dir, SNAPSHOT_DIR, MODEL_PREFIX))
+    
+    print(model.get_eval_metrics())
     
     logging.info('Saving model')
     save_model(model, args.model_dir)
@@ -121,6 +178,11 @@ def parse_args():
                         required=False,
                         default=0,
                         help='Number of training iterations')
+    parser.add_argument('--max_eval_iter',
+                        type=int,
+                        required=False,
+                        default=100,
+                        help='Max eval batches')
     parser.add_argument('--num_epochs',
                         type=int,
                         required=False,
