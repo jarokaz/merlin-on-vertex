@@ -14,6 +14,7 @@
 """DeepFM Network trainer."""
 
 import argparse
+import hypertune
 import json
 import logging
 import os
@@ -29,6 +30,7 @@ MODEL_PREFIX = 'deepfm'
 SNAPSHOT_DIR = 'snapshots'
 GRAPH_DIR = 'graph'
 MODEL_PARAMETERS_DIR = 'parameters'
+HYPERTUNE_METRIC_NAME = 'AUC'
 
 
 def save_model(model, model_dir):
@@ -121,12 +123,20 @@ def main(args):
     save_model(model, args.model_dir)
     
     logging.info('Starting model evaluation using {} batches ...'.format(args.eval_batches))
-    auc = evaluate_model(model_dir=args.model_dir, 
+    metric_value = evaluate_model(model_dir=args.model_dir, 
                          eval_data_source=args.valid_data,
                          num_batches=args.eval_batches,         
                          max_batchsize=args.batchsize,
                          slot_size_array=args.slot_size_array)
-    logging.info('AUC on the evaluation dataset: {}'.format(auc))
+    logging.info('{} on the evaluation dataset: {}'.format(HYPERTUNE_METRIC_NAME, metric_value))
+    
+    # Report AUC to Vertex hypertuner
+    logging.info('Reporting {} metric at {} to Vertex hypertuner'.format(HYPERTUNE_METRIC_NAME, metric_value))
+    hpt = hypertune.HyperTune()
+    hpt.report_hyperparameter_tuning_metric(
+        hyperparameter_metric_tag=HYPERTUNE_METRIC_NAME,
+        metric_value=metric_value,
+        global_step=args.max_iter if repeat_dataset else args.num_epochs)
     
     
 
