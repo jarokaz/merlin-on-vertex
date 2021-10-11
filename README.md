@@ -52,8 +52,8 @@ to drive the execution of the of different steps of the system:
 1. [00-dataset-management](00-dataset-management.ipynb) describes and explore the dataset used in our examples, and load it to BigQuery.
 2. [01a-preprocessing-gcs](01a-preprocessing-gcs.ipynb) shows how to use NVTabular to process the CSV data on GCS to parquet files with Vertex AI. 
 3. [02a-training-hugectr](02a-training-hugectr.ipynb) shows how to train a HugeCTR model using Vertex AI. 
-4. [02a-training-hugectr](02b-training-tensorflow.ipynb) shows how to train a TensorFlow model using Vertex AI. 
-5. [02a-training-hugectr](02c-training-pytroch.ipynb) shows how to train a PyTroch model using Vertex AI. 
+4. [02a-training-tensorflow](02b-training-tensorflow.ipynb) shows how to train a TensorFlow model using Vertex AI. 
+5. [02a-training-pytroch](02c-training-pytroch.ipynb) shows how to train a PyTroch model using Vertex AI. 
 6. [03-inference-triton](03-inference-triton.ipynb) shows how to use Triton Inference Server to serve the model on Vertex AI.
 7. [04-e2e-pipeline](04-e2e-pipeline.ipynb) shows how to deploy and run and end-to-end NVIDIA Merlin pipeline with Vertex AI.
 
