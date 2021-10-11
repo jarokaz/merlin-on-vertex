@@ -1,0 +1,4 @@
+nvtabular==0.7.0
+tensorflow==2.5
+google-cloud-aiplatform==1.5
+kfp==1.8
