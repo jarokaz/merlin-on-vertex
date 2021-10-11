@@ -30,9 +30,7 @@ To meet the computational demands for large-scale DL recommender systems trainin
 
 In addition, you can use NVIDIA Merlin components when you are building your TensorFlow or PyTorch DL recommender models, by using NVTabular to preprocess your data, using NVTabular data loaders to feed the data to your model efficiently during training, and using Triton server to serve your trained model.
 
-**TODO**: Split these two diagrams
-
-![NVIDIA Merlin](images/merlin_vertexai.png)
+![NVIDIA Merlin](images/nvidia-merlin.png)
 
 
 [Verex AI](https://cloud.google.com/vertex-ai) is Google Cloud's unified data science and ML platform to build, deploy, and operationalize custom AI systems at scale.
@@ -41,7 +39,7 @@ as well as pipeline workflow orchestration.
 
 This code repository shows how to use Vertex AI services to run the various components of NVIDIA Merlin framework: NVTabular, HugeCTR, and Triton, to build and deploy large scale DL recommender models on Google Cloud.
 
-**TODO**: Add a diagram for Vertex AI
+![NVIDIA Merlin](images/vertexai_componentes.png)
 
 
 ## Repository structure
