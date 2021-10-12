@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Preprocessing pipeline prototype."""
+"""Preprocessing pipeline"""
 
 from ..preprocessing import kfp_components
 from kfp.v2 import dsl
@@ -27,10 +27,7 @@ def preprocessing_pipeline_gcs(
     train_paths: list,
     valid_paths: list,
     output_converted: str,
-    columns: list,
-    cols_dtype: dict,
     sep: str,
-    gpus: str,
     workflow_path: str,
     output_transformed: str,
     shuffle: str,
@@ -41,10 +38,7 @@ def preprocessing_pipeline_gcs(
         train_paths=train_paths,
         valid_paths=valid_paths,
         output_converted=output_converted,
-        columns=columns,
-        cols_dtype=cols_dtype,
-        sep=sep,
-        gpus=gpus,
+        sep=sep
     )
     convert_csv_to_parquet.set_cpu_limit("8")
     convert_csv_to_parquet.set_memory_limit("32G")
@@ -55,7 +49,6 @@ def preprocessing_pipeline_gcs(
     fit_dataset = kfp_components.fit_dataset_op(
         datasets=convert_csv_to_parquet.outputs['output_datasets'],
         workflow_path=workflow_path,
-        gpus=gpus
     )
     fit_dataset.set_cpu_limit("8")
     fit_dataset.set_memory_limit("32G")
@@ -64,9 +57,8 @@ def preprocessing_pipeline_gcs(
 
     # === Transform dataset
     transform_dataset = kfp_components.transform_dataset_op(
-        fitted_workflow=fit_dataset.outputs['fitted_workflow'],
+        workflow=fit_dataset.outputs['workflow'],
         output_transformed=output_transformed,
-        gpus=gpus
     )
     transform_dataset.set_cpu_limit("8")
     transform_dataset.set_memory_limit("32G")

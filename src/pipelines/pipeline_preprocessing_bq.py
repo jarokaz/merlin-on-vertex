@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Preprocessing pipeline prototype."""
+"""Preprocessing pipeline"""
 
 from ..preprocessing import kfp_components
 from kfp.v2 import dsl
@@ -30,7 +30,6 @@ def preprocessing_pipeline_bq(
     bq_project: str,
     bq_dataset_id: str,
     location: str,
-    gpus: str,
     workflow_path: str,
     output_transformed: str,
     shuffle: str,
@@ -52,7 +51,6 @@ def preprocessing_pipeline_bq(
     fit_dataset = kfp_components.fit_dataset_op(
         datasets=export_parquet_from_bq.outputs['output_datasets'],
         workflow_path=workflow_path,
-        gpus=gpus
     )
     fit_dataset.set_cpu_limit("8")
     fit_dataset.set_memory_limit("32G")
@@ -61,9 +59,8 @@ def preprocessing_pipeline_bq(
 
     # === Transform dataset
     transform_dataset = kfp_components.transform_dataset_op(
-        fitted_workflow=fit_dataset.outputs['fitted_workflow'],
+        workflow=fit_dataset.outputs['workflow'],
         output_transformed=output_transformed,
-        gpus=gpus
     )
     transform_dataset.set_cpu_limit("8")
     transform_dataset.set_memory_limit("32G")
