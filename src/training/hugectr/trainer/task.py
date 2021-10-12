@@ -32,6 +32,22 @@ GRAPH_DIR = 'graph'
 MODEL_PARAMETERS_DIR = 'parameters'
 HYPERTUNE_METRIC_NAME = 'AUC'
 
+LOCAL_MODEL_DIR = '/tmp/saved_model'
+LOCAL_CHECKPOINT_DIR = '/tmp/checkpoints'
+
+
+def set_job_dirs():
+    """Sets job directories based on env variables set by Vertex AI."""
+    
+    model_dir = os.getenv('AIP_MODEL_DIR', LOCAL_MODEL_DIR)
+    if model_dir[0:5] == 'gs://':
+        model_dir = model_dir.replace('gs://', '/gcs/')
+    checkpoint_dir = os.getenv('AIP_CHECKPOINT_DIR', LOCAL_CHECKPOINT_DIR)
+    if checkpoint_dir[0:5] == 'gs://':
+        checkpoint_dir = checkpoint_dir.replace('gs://', '/gcs/')
+    
+    return model_dir, checkpoint_dir
+
 
 def save_model(model, model_dir):
     """Saves model graph and model parameters."""
@@ -95,6 +111,7 @@ def main(args):
     """Runs a training loop."""
 
     repeat_dataset = False if args.num_epochs > 0 else True
+    model_dir, snapshot_dir = set_job_dirs()
     
     model = create_model(train_data=[args.train_data],
                          valid_data=args.valid_data,
@@ -111,19 +128,19 @@ def main(args):
 
     model.summary()
     
-    logging.info('Starting model fitting')
+    logging.info('Starting model training')
     model.fit(num_epochs=args.num_epochs,
               max_iter=args.max_iter,
               display=args.display_interval, 
               eval_interval=args.eval_interval, 
               snapshot=args.snapshot_interval, 
-              snapshot_prefix=os.path.join(args.model_dir, SNAPSHOT_DIR, MODEL_PREFIX))
+              snapshot_prefix=os.path.join(snapshot_dir, MODEL_PREFIX))
     
     logging.info('Saving model')
-    save_model(model, args.model_dir)
+    save_model(model, model_dir)
     
     logging.info('Starting model evaluation using {} batches ...'.format(args.eval_batches))
-    metric_value = evaluate_model(model_dir=args.model_dir, 
+    metric_value = evaluate_model(model_dir=model_dir, 
                          eval_data_source=args.valid_data,
                          num_batches=args.eval_batches,         
                          max_batchsize=args.batchsize,
@@ -208,11 +225,6 @@ def parse_args():
                         required=False,
                         default=10000,
                         help='Saves a model snapshot after given number of iterations')
-    parser.add_argument('--model_dir',
-                        type=str,
-                        required=False,
-                        default="/tmp/model",
-                        help='A base directory for snaphosts and saved model.')  
     parser.add_argument('--gpus',
                         type=str,
                         required=False,
