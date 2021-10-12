@@ -27,7 +27,6 @@ from kfp.v2.dsl import (
 )
 
 from typing import Optional
-import sys
 
 IMAGE_URI = os.environ['IMAGE_URI']
 
@@ -39,10 +38,7 @@ def convert_csv_to_parquet_op(
     train_paths: list,
     valid_paths: list,
     output_converted: str,
-    columns: list,
-    cols_dtype: dict,
     sep: str,
-    gpus: str,
     shuffle: Optional[str] = None,
     recursive: Optional[bool] = False
 ):
@@ -74,18 +70,8 @@ def convert_csv_to_parquet_op(
         Path in GCS to write the converted parquet files.
         Format:
             '/gcs/<bucket_name>/<subfolder1>/<subfolder>'
-    columns: list
-        List with the columns name from CSV file.
-        Format:
-            ['I1', 'I2', ..., 'C1', ...]
-    cols_dtype: dict
-        Dict with the dtype of the columns from CSV.
-        Format:
-            {'I1':'int32', ..., 'C20':'hex'}
-    gpus: str
-        GPUs available. 
-        Format:
-            If there are 4 gpus available, must be '0,1,2,3'
+    recursive: bool
+        If it must recursivelly look for files in path.
     shuffle: str
         How to shuffle the converted CSV, default to None.
         Options:
@@ -93,85 +79,37 @@ def convert_csv_to_parquet_op(
             PER_WORKER
             FULL
     '''
-
     # Standard Libraries
     import logging
-    import fsspec
     import os
 
-    # External Dependencies
-    from dask_cuda import LocalCUDACluster
-    from dask.distributed import Client
-    import numpy as np
-
-    # NVTabular
-    from nvtabular.utils import device_mem_size, get_rmm_size
-    import nvtabular as nvt
-    from nvtabular.io.shuffle import Shuffle
+    # ETL library
+    from etl import etl
 
     logging.basicConfig(level=logging.INFO)
 
-    # Specify column dtypes (from numpy). Note that 'hex' means that
-    # the values will be hexadecimal strings that should be converted to int32
-    logging.info('Converting columns dtypes to numpy objects')
-    converted_col_dtype = {}
-    for col, dt in cols_dtype.items():
-        if dt == 'hex':
-            converted_col_dtype[col] = 'hex'
-        else:
-            converted_col_dtype[col] = getattr(np, dt)
-
-    fs_spec = fsspec.filesystem('gs')
-    rec_symbol = '**' if recursive else '*'
+    logging.info('Getting column names and dtypes')
+    col_dtypes = etl.get_criteo_col_dtypes()
 
     logging.info('Creating a Dask CUDA cluster')
-    cluster = LocalCUDACluster(
-        rmm_pool_size=get_rmm_size(0.8 * device_mem_size())
-    )
-    client = Client(cluster)
+    client = etl.create_convert_cluster()
 
     for folder_name, data_paths in zip(
         ['train', 'valid'], 
         [train_paths, valid_paths]
     ):
-        valid_paths = []
-        for path in data_paths:
-            try:
-                if fs_spec.isfile(path):
-                    valid_paths.append(path)
-                else:
-                    path = os.path.join(path, rec_symbol)
-                    for i in fs_spec.glob(path):
-                        if fs_spec.isfile(i):
-                            valid_paths.append(f'gs://{i}')
-            except FileNotFoundError as fnf_expt:
-                print(fnf_expt)
-                print('One of the paths provided are incorrect.')
-            except OSError as os_err:
-                print(os_err)
-                print(f'Verify access to the bucket.')
-
-        dataset = nvt.Dataset(
-            path_or_source = valid_paths,
-            engine='csv',
-            names=columns,
+        logging.info(f'Creating {folder_name} dataset.')
+        dataset = etl.create_csv_dateset(
+            data_paths=data_paths,
             sep=sep,
-            dtypes=converted_col_dtype,
-            client=client,
-            assume_missing=True
+            recursive=recursive, 
+            col_dtypes=col_dtypes, 
+            client=client
         )
 
         full_output_path = os.path.join('/gcs', output_converted, folder_name)
-
         logging.info(f'Writing parquet file(s) to {full_output_path}')
-        if shuffle:
-            shuffle = getattr(Shuffle, shuffle)
-
-        dataset.to_parquet(
-            full_output_path,
-            preserve_files=True,
-            shuffle=shuffle
-        )
+        etl.convert_csv_to_parquet(full_output_path, dataset, shuffle)
 
         # Write output path to metadata
         output_datasets.metadata[folder_name] = os.path.join(
@@ -184,11 +122,9 @@ def convert_csv_to_parquet_op(
 )
 def fit_dataset_op(
     datasets: Input[Dataset],
-    fitted_workflow: Output[Artifact],
+    workflow: Output[Artifact],
     workflow_path: str,
-    gpus: str,
     split_name: Optional[str] = 'train',
-    protocol: Optional[str] = 'tcp',
     device_limit_frac: Optional[float] = 0.8,
     device_pool_frac: Optional[float] = 0.9,
     part_mem_frac: Optional[float] = 0.125
@@ -204,87 +140,64 @@ def fit_dataset_op(
                 .example: 'gs://my_bucket/folders/converted/train'
             full_path_valid = datasets.metadata.get('valid')
                 .example: 'gs://my_bucket/folders/converted/valid'
-    fitted_workflow: Output[Artifact]
+    workflow: Output[Artifact]
         Output metadata with the path to the fitted workflow artifacts
         (statistics) and converted datasets in GCS.
         Usage:
-            fitted_workflow.metadata['fitted_workflow']
+            workflow.metadata['workflow']
                 .example: '/gcs/my_bucket/fitted_workflow'
-            fitted_workflow.metadata['datasets']
+            workflow.metadata['datasets']
                 .example: 'gs://my_bucket/folders/converted/train'
     workflow_path: str
-        Path to the current workflow, not fitted. This path must have 
-        2 files: metadata.json and workflow.pkl.
+        Path to the fitted workflow.
         Format:
             '<bucket_name>/<subfolder1>/<subfolder>'
     split_name: str
         Which dataset split to calculate the statistics. 'train' or 'valid'
     '''
-
+    from etl import etl
     import logging
-    import nvtabular as nvt
     import os
-    
-    from dask_cuda import LocalCUDACluster
-    from dask.distributed import Client
-    from nvtabular.utils import device_mem_size
 
     logging.basicConfig(level=logging.INFO)
 
-    # Check if the `split_name` dataset is present
-    logging.info(f'Checking if split {split_name} is present.')
-    data_path = datasets.metadata.get(split_name, '')
-    if not data_path:
-        raise RuntimeError(f'Dataset does not have {split_name} split.')
+    # Retrieve `split_name` from metadata
+    data_path = datasets.metadata[split_name]
 
-    # Dask Cluster defintions
-    device_size = device_mem_size()
-    device_limit = int(device_limit_frac * device_size)
-    device_pool_size = int(device_pool_frac * device_size)
-    part_size = int(part_mem_frac * device_size)
-    rmm_pool_size = (device_pool_size // 256) * 256
+    # Create data transformation workflow. This step will only 
+    # calculate statistics based on the transformations
+    criteo_workflow = etl.create_criteo_nvt_workflow()    
 
-    logging.info('Creating a Dask CUDA cluster')
-    cluster = LocalCUDACluster(
-        device_memory_limit=device_limit,
-        rmm_pool_size=rmm_pool_size
+    # Create Dask cluster
+    client = etl.create_transform_cluster(device_limit_frac, device_pool_frac)
+
+    # Create dataset to be fitted
+    dataset = etl.create_fit_dataset(
+        data_path=data_path,
+        part_mem_frac=part_mem_frac,
+        client=client
     )
-    client = Client(cluster)
 
-    # Load Transformation steps
-    FIT_FOLDER = os.path.join('/gcs', workflow_path, 'fitted_workflow')
+    full_workflow_path = os.path.join('/gcs', workflow_path)
 
-    logging.info('Loading saved workflow')
-    workflow = nvt.Workflow.load(
-        os.path.join('/gcs', workflow_path), client
-    )
-    fitted_dataset = nvt.Dataset(
-        os.path.join(data_path, '*.parquet'),
-        engine="parquet", 
-        part_size=part_size
-    )
     logging.info('Starting workflow fitting')
-    workflow.fit(fitted_dataset)
+    etl.fit_and_save_workflow(criteo_workflow, dataset, full_workflow_path)
     logging.info('Finished generating statistics for dataset.')
+    logging.info(f'Workflow saved to {full_workflow_path}')
 
-    logging.info(f'Saving workflow to {FIT_FOLDER}')
-    workflow.save(FIT_FOLDER)
-
-    fitted_workflow.metadata['fitted_workflow'] = FIT_FOLDER
-    fitted_workflow.metadata['datasets'] = datasets.metadata
+    workflow.metadata['workflow'] = full_workflow_path
+    workflow.metadata['datasets'] = datasets.metadata
 
 
 @dsl.component(
     base_image=IMAGE_URI
 )
 def transform_dataset_op(
-    fitted_workflow: Input[Artifact],
+    workflow: Input[Artifact],
     transformed_dataset: Output[Dataset],
     output_transformed: str,
-    gpus: str,
     split_name: str = 'train',
     shuffle: str = None,
-    protocol: str = 'tcp',
     device_limit_frac: float = 0.8,
     device_pool_frac: float = 0.9,
     part_mem_frac: float = 0.125,
@@ -292,7 +205,7 @@ def transform_dataset_op(
     '''
     Component to transform a dataset according to the workflow specifications.
 
-    fitted_workflow: Input[Artifact]
+    workflow: Input[Artifact]
         Input metadata with the path to the fitted_workflow and the 
         location of the converted datasets in GCS (train and validation).
         Usage:
@@ -313,60 +226,30 @@ def transform_dataset_op(
         Format:
             '<bucket_name>/<subfolder1>/<subfolder>/'
     '''
-
+    from etl import etl
     import logging
-    import nvtabular as nvt
     import os
-    
-    from dask_cuda import LocalCUDACluster
-    from dask.distributed import Client
-    from nvtabular.utils import device_mem_size
-    from nvtabular.io.shuffle import Shuffle
 
     logging.basicConfig(level=logging.INFO)
 
     # Define output path for transformed files
-    TRANSFORM_FOLDER = os.path.join('/gcs', output_transformed, split_name)
+    transform_folder = os.path.join('/gcs', output_transformed, split_name)
 
     # Get path to dataset to be transformed
-    data_path = fitted_workflow.metadata.get('datasets').get(split_name, '')
-    if not data_path:
-        raise RuntimeError(f'Dataset does not have {split_name} split.')
+    data_path = workflow.metadata['datasets'][split_name]
 
-    # Dask Cluster defintions
-    device_size = device_mem_size()
-    device_limit = int(device_limit_frac * device_size)
-    device_pool_size = int(device_pool_frac * device_size)
-    part_size = int(part_mem_frac * device_size)
-    rmm_pool_size = (device_pool_size // 256) * 256
-
-    logging.info('Creating a Dask CUDA cluster')
-    cluster = LocalCUDACluster(
-        device_memory_limit=device_limit,
-        rmm_pool_size=rmm_pool_size
-    )
-    client = Client(cluster)
-
-    # Load Transformation steps
-    logging.info('Loading workflow and statistics')
-    workflow = nvt.Workflow.load(
-        fitted_workflow.metadata.get('fitted_workflow'), client
-    )
+    # Create Dask cluster
+    client = etl.create_transform_cluster(device_limit_frac, device_pool_frac)
 
     logging.info('Creating dataset definition')
-    dataset = nvt.Dataset(
-        os.path.join(data_path, '*.parquet'), 
-        engine="parquet", 
-        part_size=part_size
-    )
-
-    if shuffle:
-        shuffle = getattr(Shuffle, shuffle)
-
+    logging.info('Loading workflow and statistics')
     logging.info('Starting workflow transformation')
-    workflow.transform(dataset).to_parquet(
-        output_files=len(gpus.split(sep='/')),
-        output_path=TRANSFORM_FOLDER,
+    etl.workflow_transform(
+        data_path=data_path,
+        part_mem_frac=part_mem_frac,
+        client=client,
+        workflow_path=workflow.metadata['workflow'],
+        destination_transformed=transform_folder,
         shuffle=shuffle
     )
     logging.info('Finished transformation')
@@ -374,7 +257,7 @@ def transform_dataset_op(
     transformed_dataset.metadata['transformed_dataset'] = \
         os.path.join('gs://', output_transformed, split_name)
     transformed_dataset.metadata['original_datasets'] = \
-        fitted_workflow.metadata.get('datasets')
+        workflow.metadata.get('datasets')
 
 
 @dsl.component(
@@ -421,12 +304,10 @@ def export_parquet_from_bq_op(
 
     import logging
     import os
+    from etl import etl
     from google.cloud import bigquery
 
     logging.basicConfig(level=logging.INFO)
-
-    extract_job_config = bigquery.ExtractJobConfig()
-    extract_job_config.destination_format = 'PARQUET'
 
     client = bigquery.Client(project=bq_project)
     dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_id)
@@ -435,22 +316,15 @@ def export_parquet_from_bq_op(
         ['train', 'valid'], 
         [bq_table_train, bq_table_valid]
     ):
-        bq_glob_path = os.path.join(
-            'gs://', 
-            output_converted,
-            folder_name,
-            f'{folder_name}-*.parquet'
+        logging.info(f'Extracting {table_id}')
+        etl.extract_table_from_bq(
+            client=client,
+            output_converted=output_converted,
+            folder_name=folder_name,
+            dataset_ref=dataset_ref,
+            table_id=table_id,
+            location=location
         )
-        table_ref = dataset_ref.table(table_id)
-
-        logging.info(f'Extracting {table_ref} to {bq_glob_path}')
-        extract_job = client.extract_table(
-            table_ref, 
-            bq_glob_path, 
-            location=location,
-            job_config=extract_job_config
-        )
-        extract_job.result()
         
         full_output_path = os.path.join('gs://', output_converted, folder_name)
         logging.info(
