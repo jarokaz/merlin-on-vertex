@@ -20,6 +20,7 @@ import os
 import shutil
 import warnings
 
+import fsspec
 
 import nvtabular as nvt
 from nvtabular.io import Shuffle
@@ -94,10 +95,15 @@ def preprocess(args):
             protocol=args.protocol
         )
 
-    train_paths = glob.glob(os.path.join(args.train_folder, "*.parquet"))
-    valid_paths = glob.glob(os.path.join(args.valid_folder, "*.parquet"))
+    #fs = fsspec.filesystem("gs")
+    #train_paths = fs.glob(os.path.join('gs://', args.train_folder, "*.parquet"))
+    #valid_paths = fs.glob(os.path.join('gs://', args.valid_folder, "*.parquet"))
     part_size = int(args.part_mem_frac * device_size)
-
+    
+    train_paths = [os.path.join(args.train_folder, 'day_{}.parquet'.format(i)) for i in range(22)
+                  if i != 9]
+    valid_paths = [os.path.join(args.valid_folder, 'day_23.parquet')]
+    
     elapsed_times = {} 
     processing_start_time = time.time()
 

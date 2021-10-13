@@ -56,3 +56,42 @@ Cardinatilities based on day_0 - day_22
 ```
 
 ```
+
+
+```
+docker run -it --rm --gpus all \
+-v /home/jupyter/merlin-on-vertex/src/training/dataprep:/src \
+-w /src \
+nvcr.io/nvidia/merlin/merlin-training:21.09 \
+python convert_to_parquet.py \
+--input_path /criteo_data/criteo_tsv \
+--output_path /criteo_data/criteo_raw_parquet \
+--dask_path /criteo_data/dask-workspace \
+--devices 0,1,2,3 \
+--protocol tcp \
+--device_limit_frac 0.8 \
+--device_pool_frac 0.9 \
+--part_mem_frac 0.125
+```
+
+```
+docker run -it --rm --gpus all \
+-v /home/jupyter/merlin-on-vertex/src/training/dataprep:/src \
+-w /src \
+-v /home/jupyter/data:/criteo_data \
+nvcr.io/nvidia/merlin/merlin-training:21.09 \
+python preprocess-fsspec.py \
+--train_folder gs://jk-criteo-bucket/criteo_raw_parquet_train \
+--valid_folder gs://jk-criteo-bucket/criteo_raw_parquet_valid \
+--output_folder gs://jk-criteo-bucket/tttttttt/criteo_processed_parquet \
+--devices 0,1 \
+--protocol tcp \
+--device_limit_frac 0.8 \
+--device_pool_frac 0.9 \
+--num_io_threads 4 \
+--part_mem_frac 0.08 \
+--out_files_per_proc 8 \
+--freq_limit 6 \
+--shuffle PER_PARTITION
+```
+
