@@ -1,0 +1,8 @@
+PREPROCESS_GCS_PIPELINE_NAME = 'nvt-gcs-pipeline'
+PREPROCESS_BQ_PIPELINE_NAME = 'nvt-bq-pipeline'
+PREPROCESS_E2E_PIPELINE_NAME = 'nvt-e2e-pipeline'
+
+MEMORY_LIMIT = '120G'
+CPU_LIMIT = '32'
+GPU_LIMIT = '4'
+GPU_TYPE = 'nvidia-tesla-t4'
