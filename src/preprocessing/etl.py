@@ -4,19 +4,24 @@ import numpy as np
 import fsspec
 import os
 
-import nvtabular as nvt
-from nvtabular.utils import device_mem_size, get_rmm_size
-from nvtabular.io.shuffle import Shuffle
-from nvtabular.ops import (
-    Categorify,
-    Clip,
-    FillMissing,
-    Normalize,
-)
+try:
+    import nvtabular as nvt
+    from nvtabular.utils import device_mem_size, get_rmm_size
+    from nvtabular.io.shuffle import Shuffle
+    from nvtabular.ops import (
+        Categorify,
+        Clip,
+        FillMissing,
+        Normalize,
+    )
 
-# External Dependencies
-from dask_cuda import LocalCUDACluster
-from dask.distributed import Client
+    from dask_cuda import LocalCUDACluster
+    from dask.distributed import Client
+except:
+    pass
+
+# from dask_cuda import LocalCUDACluster
+# from dask.distributed import Client
 
 from google.cloud import bigquery
 
@@ -38,7 +43,7 @@ def get_criteo_col_dtypes() -> Dict[str,Union[str, np.int32]]:
     return col_dtypes
 
 
-def create_convert_cluster() -> Client:
+def create_convert_cluster():
     '''Create a Dask cluster'''
     cluster = LocalCUDACluster(
         rmm_pool_size=get_rmm_size(0.8 * device_mem_size())
@@ -47,12 +52,12 @@ def create_convert_cluster() -> Client:
 
 
 def create_csv_dataset(
-    data_paths: list, 
-    sep: str,
-    recursive: bool,
-    col_dtypes: Dict[str,str],
-    client: Client
-) -> nvt.Dataset:
+    data_paths, 
+    sep,
+    recursive,
+    col_dtypes,
+    client
+) :
     '''Create nvt.Dataset definition for CSV files'''
     fs_spec = fsspec.filesystem('gs')
     rec_symbol = '**' if recursive else '*'
@@ -86,9 +91,9 @@ def create_csv_dataset(
 
 
 def convert_csv_to_parquet(
-    output_path: str,
-    dataset: nvt.Dataset,
-    shuffle: nvt.io.Shuffle = None
+    output_path,
+    dataset,
+    shuffle = None
 ):
     '''Convert CSV file to parquet and write to GCS'''
     if shuffle:
@@ -101,7 +106,7 @@ def convert_csv_to_parquet(
     )
 
 
-def create_criteo_nvt_workflow() -> nvt.Workflow:
+def create_criteo_nvt_workflow():
     '''Create a nvt.Workflow definition with transformation all the steps'''
     # Columns definition
     cont_names = ["I" + str(x) for x in range(1, 14)]
@@ -122,7 +127,7 @@ def create_criteo_nvt_workflow() -> nvt.Workflow:
 def create_transform_cluster(
     device_limit_frac: float,
     device_pool_frac: float,
-) -> Client:
+):
     '''
     Create a Dask cluster to apply the transformations steps to the Dataset
     '''
@@ -140,10 +145,10 @@ def create_transform_cluster(
 
 
 def create_parquet_dataset(
-    data_path: str,
-    part_mem_frac: float,
-    client: Client
-) -> nvt.Dataset:
+    data_path,
+    part_mem_frac,
+    client
+):
     '''Create a nvt.Dataset definition for the parquet files.'''
     fs = fsspec.filesystem('gs')
     file_list = fs.glob(
@@ -164,43 +169,43 @@ def create_parquet_dataset(
 
 
 def analyze_dataset(
-    workflow: nvt.Workflow, 
-    dataset: nvt.Dataset, 
-) -> nvt.Workflow:
+    workflow, 
+    dataset, 
+):
     '''Calculate statistics for a given workflow'''
     workflow.fit(dataset)
     return workflow
 
 
 def transform_dataset(
-    dataset: nvt.Dataset, 
-    workflow: nvt.Workflow
-) -> nvt.Dataset:
+    dataset, 
+    workflow
+):
     '''Apply the transformations to the dataset.'''
     workflow.transform(dataset)
     return dataset
 
 
 def load_workflow(
-    workflow_path: str,
-    client: Client,
-) -> nvt.Workflow:
+    workflow_path,
+    client,
+):
     '''Load a workflow definition from a path'''
     return nvt.Workflow.load(workflow_path, client)
 
 
 def save_workflow(
-    workflow: nvt.Workflow, 
-    output_path: str
+    workflow, 
+    output_path
 ):
     '''Save workflow to a path'''
     workflow.save(output_path)
     
     
 def save_dataset(
-    dataset: nvt.Dataset,
-    output_path: str,
-    shuffle: str = None
+    dataset,
+    output_path,
+    shuffle = None
 ):
     '''Save dataset to parquet files to path.'''
     if shuffle:

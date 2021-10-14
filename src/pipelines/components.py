@@ -28,19 +28,18 @@ from kfp.v2.dsl import (
 
 from typing import Optional
 
-from preprocessing.etl import transform_dataset
-
-IMAGE_URI = os.environ['IMAGE_URI']
+from ..preprocessing.etl import transform_dataset
+from . import config
 
 
 @dsl.component(
-    base_image=IMAGE_URI
+    base_image=config.IMAGE_URI
 )
 def convert_csv_to_parquet_op(
     output_datasets: Output[Dataset],
     train_paths: list,
     valid_paths: list,
-    output_converted: str,
+    output_dir: str,
     sep: str,
     shuffle: Optional[str] = None,
     recursive: Optional[bool] = False
@@ -69,7 +68,7 @@ def convert_csv_to_parquet_op(
             'gs://<bucket_name>/<subfolder1>/<subfolder>/' or
             'gs://<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or
             a combination of both.
-    output_converted: str
+    output_dir: str
         Path in GCS to write the converted parquet files.
         Format:
             '<bucket_name>/<subfolder1>/<subfolder>'
@@ -110,18 +109,18 @@ def convert_csv_to_parquet_op(
             client=client
         )
 
-        fuse_output_path = os.path.join('/gcs', output_converted, folder_name)
+        
+        fuse_output_dir = output_dir.replace("gs://", "/gcs")
+        fuse_output_path = os.path.join(fuse_output_dir, folder_name)
         logging.info(f'Writing parquet file(s) to {fuse_output_path}')
         etl.convert_csv_to_parquet(fuse_output_path, dataset, shuffle)
 
         # Write output path to metadata
-        output_datasets.metadata[folder_name] = os.path.join(
-            'gs://', output_converted, folder_name
-        )
+        output_datasets.metadata[folder_name] = os.path.join(output_dir, folder_name)
 
 
 @dsl.component(
-    base_image=IMAGE_URI
+    base_image=config.IMAGE_URI
 )
 def analyze_dataset_op(
     datasets: Input[Dataset],
@@ -194,12 +193,12 @@ def analyze_dataset_op(
 
 
 @dsl.component(
-    base_image=IMAGE_URI
+    base_image=config.IMAGE_URI
 )
 def transform_dataset_op(
     workflow: Input[Artifact],
     transformed_dataset: Output[Dataset],
-    output_transformed: str,
+    transformed_output_dir: str,
     split_name: str = 'train',
     shuffle: str = None,
     device_limit_frac: float = 0.8,
@@ -225,7 +224,7 @@ def transform_dataset_op(
                 .example: 'gs://my_bucket/transformed_data/train'
             transformed_dataset.metadata['original_datasets']
                 .example: 'gs://my_bucket/converted/train'
-    output_transformed: str,
+    transformed_output_dir: str,
         Path in GCS to write the transformed parquet files.
         Format:
             '<bucket_name>/<subfolder1>/<subfolder>/'
@@ -237,7 +236,7 @@ def transform_dataset_op(
     logging.basicConfig(level=logging.INFO)
 
     # Define output path for transformed files
-    transform_output_dir = os.path.join('gs://', output_transformed, split_name)
+    transform_output_dir = os.path.join('gs://', transformed_output_dir, split_name)
 
     # Get path to dataset to be transformed
     data_path = workflow.metadata['datasets'][split_name]
@@ -266,15 +265,15 @@ def transform_dataset_op(
     logging.info('Finished transformation')
 
     logging.info('Saved transformed data')
-    etl.save_dataset(transformed_dataset, transform_output_dir)
+    etl.save_dataset(transformed_dataset, transformed_output_dir)
 
-    transformed_dataset.metadata['transformed_dataset'] = transform_output_dir
+    transformed_dataset.metadata['transformed_dataset'] = transformed_output_dir
     transformed_dataset.metadata['original_datasets'] = \
         workflow.metadata.get('datasets')
 
 
 @dsl.component(
-    base_image=IMAGE_URI
+    base_image=config.IMAGE_URI
 )
 def export_parquet_from_bq_op(
     output_datasets: Output[Dataset],

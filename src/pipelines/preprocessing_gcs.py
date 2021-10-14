@@ -14,53 +14,65 @@
 
 """Preprocessing pipeline"""
 
-from ..preprocessing import kfp_components
+from . import components
 from kfp.v2 import dsl
+from . import config
 
-import config
+GKE_ACCELERATOR_KEY = 'cloud.google.com/gke-accelerator'
 
 
 @dsl.pipeline(
     name=config.PREPROCESS_GCS_PIPELINE_NAME
 )
-def preprocessing_pipeline_gcs(
+def preprocessing_gcs(
     train_paths: list,
     valid_paths: list,
-    output_converted: str,
+    parquet_output_dir: str,
     sep: str,
     workflow_path: str,
-    output_transformed: str,
+    transformed_output_dir: str,
     shuffle: str,
     recursive: bool
 ):
     # === Convert CSV to Parquet
-    convert_csv_to_parquet = kfp_components.convert_csv_to_parquet_op(
+    convert_csv_to_parquet = components.convert_csv_to_parquet_op(
         train_paths=train_paths,
         valid_paths=valid_paths,
-        output_converted=output_converted,
+        output_dir=parquet_output_dir,
         sep=sep
     )
     convert_csv_to_parquet.set_cpu_limit(config.CPU_LIMIT)
     convert_csv_to_parquet.set_memory_limit(config.MEMORY_LIMIT)
     convert_csv_to_parquet.set_gpu_limit(config.GPU_LIMIT)
-    convert_csv_to_parquet.add_node_selector_constraint('cloud.google.com/gke-accelerator', config.GPU_TYPE)
+    convert_csv_to_parquet.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
     
-    # === Fit dataset
-    fit_dataset = kfp_components.fit_dataset_op(
+    # === Analyze train data split
+    analyze_dataset = components.analyze_dataset_op(
         datasets=convert_csv_to_parquet.outputs['output_datasets'],
         workflow_path=workflow_path,
     )
-    fit_dataset.set_cpu_limit(config.CPU_LIMIT)
-    fit_dataset.set_memory_limit(config.MEMORY_LIMIT)
-    fit_dataset.set_gpu_limit(config.GPU_LIMIT)
-    fit_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', config.GPU_TYPE)
+    analyze_dataset.set_cpu_limit(config.CPU_LIMIT)
+    analyze_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    analyze_dataset.set_gpu_limit(config.GPU_LIMIT)
+    analyze_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
 
-    # === Transform dataset
-    transform_dataset = kfp_components.transform_dataset_op(
-        workflow=fit_dataset.outputs['workflow'],
-        output_transformed=output_transformed,
+    # === Transform train data split
+    transform_dataset = components.transform_dataset_op(
+        workflow=analyze_dataset.outputs['workflow'],
+        transformed_output_dir=transformed_output_dir,
     )
     transform_dataset.set_cpu_limit(config.CPU_LIMIT)
     transform_dataset.set_memory_limit(config.MEMORY_LIMIT)
     transform_dataset.set_gpu_limit(config.GPU_LIMIT)
-    transform_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', config.GPU_TYPE)
+    transform_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
+    
+    # === Transform eval data split
+    transform_dataset = components.transform_dataset_op(
+        workflow=analyze_dataset.outputs['workflow'],
+        transformed_output_dir=transformed_output_dir,
+        split_name='valid'
+    )
+    transform_dataset.set_cpu_limit(config.CPU_LIMIT)
+    transform_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    transform_dataset.set_gpu_limit(config.GPU_LIMIT)
+    transform_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
