@@ -15,8 +15,11 @@ from nvtabular.ops import (
 )
 
 # External Dependencies
-from dask_cuda import LocalCUDACluster
-from dask.distributed import Client
+try:
+    from dask_cuda import LocalCUDACluster
+    from dask.distributed import Client
+except:
+    pass
 
 from google.cloud import bigquery
 

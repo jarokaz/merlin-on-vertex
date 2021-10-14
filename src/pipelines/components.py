@@ -28,7 +28,7 @@ from kfp.v2.dsl import (
 
 from typing import Optional
 
-from preprocessing.etl import transform_dataset
+from ..preprocessing.etl import transform_dataset
 
 IMAGE_URI = os.environ['IMAGE_URI']
 

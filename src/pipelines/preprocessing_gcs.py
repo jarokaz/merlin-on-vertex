@@ -14,7 +14,7 @@
 
 """Preprocessing pipeline"""
 
-from ..preprocessing import kfp_components
+from . import components
 from kfp.v2 import dsl
 
 import config
