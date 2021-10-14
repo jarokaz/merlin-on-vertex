@@ -28,7 +28,10 @@ from kfp.v2.dsl import (
 
 from typing import Optional
 
+from preprocessing.etl import transform_dataset
+
 IMAGE_URI = os.environ['IMAGE_URI']
+
 
 @dsl.component(
     base_image=IMAGE_URI
@@ -69,7 +72,7 @@ def convert_csv_to_parquet_op(
     output_converted: str
         Path in GCS to write the converted parquet files.
         Format:
-            '/gcs/<bucket_name>/<subfolder1>/<subfolder>'
+            '<bucket_name>/<subfolder1>/<subfolder>'
     recursive: bool
         If it must recursivelly look for files in path.
     shuffle: str
@@ -84,7 +87,7 @@ def convert_csv_to_parquet_op(
     import os
 
     # ETL library
-    from etl import etl
+    from preprocessing import etl
 
     logging.basicConfig(level=logging.INFO)
 
@@ -99,7 +102,7 @@ def convert_csv_to_parquet_op(
         [train_paths, valid_paths]
     ):
         logging.info(f'Creating {folder_name} dataset.')
-        dataset = etl.create_csv_dateset(
+        dataset = etl.create_csv_dataset(
             data_paths=data_paths,
             sep=sep,
             recursive=recursive, 
@@ -107,9 +110,9 @@ def convert_csv_to_parquet_op(
             client=client
         )
 
-        full_output_path = os.path.join('/gcs', output_converted, folder_name)
-        logging.info(f'Writing parquet file(s) to {full_output_path}')
-        etl.convert_csv_to_parquet(full_output_path, dataset, shuffle)
+        fuse_output_path = os.path.join('/gcs', output_converted, folder_name)
+        logging.info(f'Writing parquet file(s) to {fuse_output_path}')
+        etl.convert_csv_to_parquet(fuse_output_path, dataset, shuffle)
 
         # Write output path to metadata
         output_datasets.metadata[folder_name] = os.path.join(
@@ -120,7 +123,7 @@ def convert_csv_to_parquet_op(
 @dsl.component(
     base_image=IMAGE_URI
 )
-def fit_dataset_op(
+def analyze_dataset_op(
     datasets: Input[Dataset],
     workflow: Output[Artifact],
     workflow_path: str,
@@ -149,13 +152,13 @@ def fit_dataset_op(
             workflow.metadata['datasets']
                 .example: 'gs://my_bucket/folders/converted/train'
     workflow_path: str
-        Path to the fitted workflow.
+        Path to write the fitted workflow.
         Format:
             '<bucket_name>/<subfolder1>/<subfolder>'
     split_name: str
         Which dataset split to calculate the statistics. 'train' or 'valid'
     '''
-    from etl import etl
+    from preprocessing import etl
     import logging
     import os
 
@@ -166,26 +169,27 @@ def fit_dataset_op(
 
     # Create data transformation workflow. This step will only 
     # calculate statistics based on the transformations
+    logging.info('Creating transformation workflow.')
     criteo_workflow = etl.create_criteo_nvt_workflow()    
 
     # Create Dask cluster
     client = etl.create_transform_cluster(device_limit_frac, device_pool_frac)
 
     # Create dataset to be fitted
-    dataset = etl.create_fit_dataset(
+    dataset = etl.create_parquet_dataset(
         data_path=data_path,
         part_mem_frac=part_mem_frac,
         client=client
     )
 
-    full_workflow_path = os.path.join('/gcs', workflow_path)
-
     logging.info('Starting workflow fitting')
-    etl.fit_and_save_workflow(criteo_workflow, dataset, full_workflow_path)
+    criteo_workflow = etl.analyze_dataset(criteo_workflow, dataset)
     logging.info('Finished generating statistics for dataset.')
-    logging.info(f'Workflow saved to {full_workflow_path}')
 
-    workflow.metadata['workflow'] = full_workflow_path
+    etl.save_workflow(criteo_workflow, os.path.join('/gcs', workflow_path))
+    logging.info('Workflow saved to GCS')
+
+    workflow.metadata['workflow'] = os.path.join('/gcs', workflow_path)
     workflow.metadata['datasets'] = datasets.metadata
 
 
@@ -226,14 +230,14 @@ def transform_dataset_op(
         Format:
             '<bucket_name>/<subfolder1>/<subfolder>/'
     '''
-    from etl import etl
+    from preprocessing import etl
     import logging
     import os
 
     logging.basicConfig(level=logging.INFO)
 
     # Define output path for transformed files
-    transform_folder = os.path.join('/gcs', output_transformed, split_name)
+    transform_output_dir = os.path.join('gs://', output_transformed, split_name)
 
     # Get path to dataset to be transformed
     data_path = workflow.metadata['datasets'][split_name]
@@ -241,21 +245,30 @@ def transform_dataset_op(
     # Create Dask cluster
     client = etl.create_transform_cluster(device_limit_frac, device_pool_frac)
 
-    logging.info('Creating dataset definition')
-    logging.info('Loading workflow and statistics')
-    logging.info('Starting workflow transformation')
-    etl.workflow_transform(
+    logging.info(f'Creating dataset definition for {split_name} split')
+    dataset = etl.create_parquet_dataset(
         data_path=data_path,
         part_mem_frac=part_mem_frac,
-        client=client,
+        client=client
+    )
+    logging.info('Loading workflow and statistics')
+    criteo_workflow = etl.load_workflow(
         workflow_path=workflow.metadata['workflow'],
-        destination_transformed=transform_folder,
-        shuffle=shuffle
+        client=client
+    )
+    logging.info('Workflow is loaded')
+    
+    logging.info('Starting workflow transformation')
+    transformed_dataset = etl.transform_dataset(
+        dataset=dataset,
+        workflow=criteo_workflow
     )
     logging.info('Finished transformation')
 
-    transformed_dataset.metadata['transformed_dataset'] = \
-        os.path.join('gs://', output_transformed, split_name)
+    logging.info('Saved transformed data')
+    etl.save_dataset(transformed_dataset, transform_output_dir)
+
+    transformed_dataset.metadata['transformed_dataset'] = transform_output_dir
     transformed_dataset.metadata['original_datasets'] = \
         workflow.metadata.get('datasets')
 
@@ -304,7 +317,7 @@ def export_parquet_from_bq_op(
 
     import logging
     import os
-    from etl import etl
+    from preprocessing import etl
     from google.cloud import bigquery
 
     logging.basicConfig(level=logging.INFO)

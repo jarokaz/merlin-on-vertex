@@ -17,11 +17,11 @@
 from ..preprocessing import kfp_components
 from kfp.v2 import dsl
 
-PIPELINE_NAME = 'nvt-gcs-pipeline'
+import config
 
 
 @dsl.pipeline(
-    name=PIPELINE_NAME
+    name=config.PREPROCESS_GCS_PIPELINE_NAME
 )
 def preprocessing_pipeline_gcs(
     train_paths: list,
@@ -40,27 +40,27 @@ def preprocessing_pipeline_gcs(
         output_converted=output_converted,
         sep=sep
     )
-    convert_csv_to_parquet.set_cpu_limit("8")
-    convert_csv_to_parquet.set_memory_limit("32G")
-    convert_csv_to_parquet.set_gpu_limit("1")
-    convert_csv_to_parquet.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
+    convert_csv_to_parquet.set_cpu_limit(config.CPU_LIMIT)
+    convert_csv_to_parquet.set_memory_limit(config.MEMORY_LIMIT)
+    convert_csv_to_parquet.set_gpu_limit(config.GPU_LIMIT)
+    convert_csv_to_parquet.add_node_selector_constraint('cloud.google.com/gke-accelerator', config.GPU_TYPE)
     
     # === Fit dataset
     fit_dataset = kfp_components.fit_dataset_op(
         datasets=convert_csv_to_parquet.outputs['output_datasets'],
         workflow_path=workflow_path,
     )
-    fit_dataset.set_cpu_limit("8")
-    fit_dataset.set_memory_limit("32G")
-    fit_dataset.set_gpu_limit("1")
-    fit_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
+    fit_dataset.set_cpu_limit(config.CPU_LIMIT)
+    fit_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    fit_dataset.set_gpu_limit(config.GPU_LIMIT)
+    fit_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', config.GPU_TYPE)
 
     # === Transform dataset
     transform_dataset = kfp_components.transform_dataset_op(
         workflow=fit_dataset.outputs['workflow'],
         output_transformed=output_transformed,
     )
-    transform_dataset.set_cpu_limit("8")
-    transform_dataset.set_memory_limit("32G")
-    transform_dataset.set_gpu_limit("1")
-    transform_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
+    transform_dataset.set_cpu_limit(config.CPU_LIMIT)
+    transform_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    transform_dataset.set_gpu_limit(config.GPU_LIMIT)
+    transform_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', config.GPU_TYPE)

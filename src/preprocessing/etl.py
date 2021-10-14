@@ -22,6 +22,8 @@ from google.cloud import bigquery
 
 
 def get_criteo_col_dtypes() -> Dict[str,Union[str, np.int32]]:
+    '''Returns a dict mapping column names to numpy dtype.
+    This function is specific to Criteo Dataset'''
     # Specify column dtypes. Note that "hex" means that
     # the values will be hexadecimal strings that should
     # be converted to int32
@@ -37,19 +39,21 @@ def get_criteo_col_dtypes() -> Dict[str,Union[str, np.int32]]:
 
 
 def create_convert_cluster() -> Client:
+    '''Create a Dask cluster'''
     cluster = LocalCUDACluster(
         rmm_pool_size=get_rmm_size(0.8 * device_mem_size())
     )
     return Client(cluster)
 
 
-def create_csv_dateset(
+def create_csv_dataset(
     data_paths: list, 
     sep: str,
     recursive: bool,
     col_dtypes: Dict[str,str],
     client: Client
 ) -> nvt.Dataset:
+    '''Create nvt.Dataset definition for CSV files'''
     fs_spec = fsspec.filesystem('gs')
     rec_symbol = '**' if recursive else '*'
 
@@ -86,6 +90,7 @@ def convert_csv_to_parquet(
     dataset: nvt.Dataset,
     shuffle: nvt.io.Shuffle = None
 ):
+    '''Convert CSV file to parquet and write to GCS'''
     if shuffle:
         shuffle = getattr(Shuffle, shuffle)
 
@@ -97,6 +102,7 @@ def convert_csv_to_parquet(
 
 
 def create_criteo_nvt_workflow() -> nvt.Workflow:
+    '''Create a nvt.Workflow definition with transformation all the steps'''
     # Columns definition
     cont_names = ["I" + str(x) for x in range(1, 14)]
     cat_names = ["C" + str(x) for x in range(1, 27)]
@@ -105,7 +111,8 @@ def create_criteo_nvt_workflow() -> nvt.Workflow:
     num_buckets = 10000000
     categorify_op = Categorify(max_size=num_buckets)
     cat_features = cat_names >> categorify_op
-    cont_features = cont_names >> FillMissing() >> Clip(min_value=0) >> Normalize()
+    cont_features = cont_names >> FillMissing() >> \
+        Clip(min_value=0) >> Normalize()
     features = cat_features + cont_features + ['label']
 
     # Create and save workflow
@@ -116,6 +123,9 @@ def create_transform_cluster(
     device_limit_frac: float,
     device_pool_frac: float,
 ) -> Client:
+    '''
+    Create a Dask cluster to apply the transformations steps to the Dataset
+    '''
     device_size = device_mem_size()
     device_limit = int(device_limit_frac * device_size)
     device_pool_size = int(device_pool_frac * device_size)
@@ -129,52 +139,78 @@ def create_transform_cluster(
     return Client(cluster)
 
 
-def create_fit_dataset(
+def create_parquet_dataset(
     data_path: str,
     part_mem_frac: float,
-    client
+    client: Client
 ) -> nvt.Dataset:
+    '''Create a nvt.Dataset definition for the parquet files.'''
+    fs = fsspec.filesystem('gs')
+    file_list = fs.glob(
+        os.path.join(data_path, '*.parquet')
+    )
+
+    if not file_list:
+        raise FileNotFoundError('Parquet file(s) not found')
+    
+    file_list = [os.path.join('gs://', i) for i in file_list]
+
     return nvt.Dataset(
-        os.path.join(data_path, '*.parquet'),
+        file_list, # os.path.join(data_path, '*.parquet'),
         engine="parquet", 
         part_size=int(part_mem_frac * device_mem_size()),
         client=client
     )
 
 
-def fit_and_save_workflow(
+def analyze_dataset(
     workflow: nvt.Workflow, 
     dataset: nvt.Dataset, 
-    workflow_path: str
-):
+) -> nvt.Workflow:
+    '''Calculate statistics for a given workflow'''
     workflow.fit(dataset)
-    workflow.save(workflow_path)
+    return workflow
 
 
-def workflow_transform(
-    data_path: str,
-    part_mem_frac: float,
-    client: Client,
+def transform_dataset(
+    dataset: nvt.Dataset, 
+    workflow: nvt.Workflow
+) -> nvt.Dataset:
+    '''Apply the transformations to the dataset.'''
+    workflow.transform(dataset)
+    return dataset
+
+
+def load_workflow(
     workflow_path: str,
-    destination_transformed: str,
+    client: Client,
+) -> nvt.Workflow:
+    '''Load a workflow definition from a path'''
+    return nvt.Workflow.load(workflow_path, client)
+
+
+def save_workflow(
+    workflow: nvt.Workflow, 
+    output_path: str
+):
+    '''Save workflow to a path'''
+    workflow.save(output_path)
+    
+    
+def save_dataset(
+    dataset: nvt.Dataset,
+    output_path: str,
     shuffle: str = None
 ):
+    '''Save dataset to parquet files to path.'''
     if shuffle:
         shuffle = getattr(Shuffle, shuffle)
-
-    # Load Transformation steps
-    workflow = nvt.Workflow.load(workflow_path, client)
-
-    dataset = nvt.Dataset(
-        os.path.join(data_path, '*.parquet'),
-        engine="parquet", 
-        part_size=int(part_mem_frac * device_mem_size())
-    )
-
-    workflow.transform(dataset).to_parquet(
-        output_path=destination_transformed,
+    
+    dataset.to_parquet(
+        output_path=output_path,
         shuffle=shuffle
     )
+
 
 def extract_table_from_bq(
     client,
@@ -184,6 +220,7 @@ def extract_table_from_bq(
     table_id,
     location = 'us'
 ):
+    '''Create job to extract parquet files from BQ tables'''
     extract_job_config = bigquery.ExtractJobConfig()
     extract_job_config.destination_format = 'PARQUET'
 
