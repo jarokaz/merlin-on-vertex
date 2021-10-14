@@ -38,12 +38,12 @@ python -m trainer.task \
 
 ```
 docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-on-vertex/src/training/hugectr:/src \
+-v /home/jupyter/merlin-on-vertex/src/training:/src \
 -v /home/jupyter/data:/criteo_data \
 -w /src \
 -e AIP_MODEL_DIR='/criteo_data/model' \
 -e AIP_CHECKPOINT_DIR='/criteo_data/checkpoints' \
-nvcr.io/nvidia/merlin/merlin-training:0.6 \
+nvcr.io/nvidia/merlin/merlin-inference:21.09 \
 python -m trainer.task \
 --num_epochs 0 \
 --max_iter 5000 \

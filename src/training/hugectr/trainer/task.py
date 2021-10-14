@@ -53,16 +53,22 @@ def save_model(model, model_dir):
     """Saves model graph and model parameters."""
     
     graph_path = os.path.join(model_dir, GRAPH_DIR)
+    parameters_path = os.path.join(model_dir, MODEL_PARAMETERS_DIR)
+                                   
     if os.path.isdir(graph_path):
         shutil.rmtree(graph_path)
     os.makedirs(graph_path)
+    
+    if os.path.isdir(parameters_path):
+        shutil.rmtree(parameters_path)
+    os.makedirs(parameters_path)
                      
     graph_path = os.path.join(graph_path, f'{MODEL_PREFIX}.json')
     logging.info('Saving model graph to: {}'.format(graph_path))  
     
     model.graph_to_json(graph_config_file=graph_path)
    
-    parameters_path = os.path.join(model_dir, MODEL_PARAMETERS_DIR, MODEL_PREFIX)
+    parameters_path = os.path.join(parameters_path, MODEL_PREFIX)
     logging.info('Saving model parameters to: {}'.format(parameters_path)) 
     model.save_params_to_files(prefix=parameters_path)
     
@@ -78,7 +84,7 @@ def evaluate_model(
     use_gpu_embedding_cache=True,
     cache_size_percentage=0.6,
     i64_input_key=True):
-    """Evaluates a model on a validation set."""
+    """Evaluates a model on a validation dataset."""
     
     dense_model_file = os.path.join(model_dir, MODEL_PARAMETERS_DIR, f'{MODEL_PREFIX}_dense_0.model')
     sparse_model_files = [os.path.join(model_dir, MODEL_PARAMETERS_DIR, f'{MODEL_PREFIX}0_sparse_0.model')]
