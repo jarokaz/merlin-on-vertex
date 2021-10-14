@@ -236,7 +236,7 @@ def transform_dataset_op(
     logging.basicConfig(level=logging.INFO)
 
     # Define output path for transformed files
-    transform_output_dir = os.path.join('gs://', output_transformed, split_name)
+    transform_output_dir = os.path.join('gs://', transformed_output_dir, split_name)
 
     # Get path to dataset to be transformed
     data_path = workflow.metadata['datasets'][split_name]
