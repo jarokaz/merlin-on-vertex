@@ -13,11 +13,15 @@
 # limitations under the License.
 """Vertex pipeline configurations."""
 
-PREPROCESS_GCS_PIPELINE_NAME = 'nvt-gcs-pipeline'
-PREPROCESS_BQ_PIPELINE_NAME = 'nvt-bq-pipeline'
-PREPROCESS_E2E_PIPELINE_NAME = 'nvt-e2e-pipeline'
+import os
 
-MEMORY_LIMIT = '120G'
-CPU_LIMIT = '32'
-GPU_LIMIT = '4'
-GPU_TYPE = 'nvidia-tesla-t4'
+IMAGE_URI = os.getenv("IMAGE_URI", "")
+
+PREPROCESS_GCS_PIPELINE_NAME = os.getenv("PREPROCESS_GCS_PIPELINE_NAME", "nvt-gcs-pipeline")
+PREPROCESS_BQ_PIPELINE_NAME = os.getenv("PREPROCESS_BQ_PIPELINE_NAME", "nvt-bq-pipeline")
+PREPROCESS_E2E_PIPELINE_NAME = os.getenv("PREPROCESS_E2E_PIPELINE_NAME", "merlin-e2e-pipeline")
+
+MEMORY_LIMIT = os.getenv("MEMORY_LIMIT", "120G")
+CPU_LIMIT = os.getenv("CPU_LIMIT", "32")
+GPU_LIMIT = os.getenv("GPU_LIMIT", "4")
+GPU_TYPE = os.getenv("GPU_TYPE", "nvidia-tesla-t4")
