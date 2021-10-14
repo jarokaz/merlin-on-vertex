@@ -20,9 +20,6 @@ try:
 except:
     pass
 
-# from dask_cuda import LocalCUDACluster
-# from dask.distributed import Client
-
 from google.cloud import bigquery
 
 
@@ -106,7 +103,7 @@ def convert_csv_to_parquet(
     )
 
 
-def create_criteo_nvt_workflow():
+def create_criteo_nvt_workflow(client):
     '''Create a nvt.Workflow definition with transformation all the steps'''
     # Columns definition
     cont_names = ["I" + str(x) for x in range(1, 14)]
@@ -121,10 +118,11 @@ def create_criteo_nvt_workflow():
     features = cat_features + cont_features + ['label']
 
     # Create and save workflow
-    return nvt.Workflow(features)
+    return nvt.Workflow(features, client)
 
 
 def create_transform_cluster(
+    n_workers, 
     device_limit_frac: float,
     device_pool_frac: float,
 ):
@@ -137,6 +135,7 @@ def create_transform_cluster(
     rmm_pool_size = (device_pool_size // 256) * 256
 
     cluster = LocalCUDACluster(
+        n_workers=n_workers,
         device_memory_limit=device_limit,
         rmm_pool_size=rmm_pool_size
     )
@@ -146,8 +145,7 @@ def create_transform_cluster(
 
 def create_parquet_dataset(
     data_path,
-    part_mem_frac,
-    client
+    part_mem_frac
 ):
     '''Create a nvt.Dataset definition for the parquet files.'''
     fs = fsspec.filesystem('gs')
@@ -161,10 +159,9 @@ def create_parquet_dataset(
     file_list = [os.path.join('gs://', i) for i in file_list]
 
     return nvt.Dataset(
-        file_list, # os.path.join(data_path, '*.parquet'),
+        file_list,
         engine="parquet", 
-        part_size=int(part_mem_frac * device_mem_size()),
-        client=client
+        part_size=int(part_mem_frac * device_mem_size())
     )
 
 

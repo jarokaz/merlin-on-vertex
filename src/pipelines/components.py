@@ -108,7 +108,6 @@ def convert_csv_to_parquet_op(
             col_dtypes=col_dtypes, 
             client=client
         )
-
         
         fuse_output_dir = output_dir.replace("gs://", "/gcs")
         fuse_output_path = os.path.join(fuse_output_dir, folder_name)
@@ -166,19 +165,23 @@ def analyze_dataset_op(
     # Retrieve `split_name` from metadata
     data_path = datasets.metadata[split_name]
 
+    # Create Dask cluster
+    logging.info('Creating Dask cluster.')
+    client = etl.create_transform_cluster(
+        n_workers = config.GPU_LIMIT,
+        device_limit_frac = device_limit_frac, 
+        device_pool_frac = device_pool_frac
+    )
+
     # Create data transformation workflow. This step will only 
     # calculate statistics based on the transformations
     logging.info('Creating transformation workflow.')
-    criteo_workflow = etl.create_criteo_nvt_workflow()    
-
-    # Create Dask cluster
-    client = etl.create_transform_cluster(device_limit_frac, device_pool_frac)
+    criteo_workflow = etl.create_criteo_nvt_workflow(client=client)
 
     # Create dataset to be fitted
     dataset = etl.create_parquet_dataset(
         data_path=data_path,
-        part_mem_frac=part_mem_frac,
-        client=client
+        part_mem_frac=part_mem_frac
     )
 
     logging.info('Starting workflow fitting')
