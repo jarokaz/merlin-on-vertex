@@ -95,3 +95,25 @@ python preprocess-fsspec.py \
 --shuffle PER_PARTITION
 ```
 
+
+
+```
+docker run -it --rm --gpus all \
+-v /home/jupyter/merlin-on-vertex/src/training/hugectr:/src \
+-w /src \
+-v /home/jupyter/data:/criteo_data \
+nvcr.io/nvidia/merlin/merlin-inference:0.6 \
+python preprocess.py \
+--train_folder /criteo_data/criteo_raw_parquet_train \
+--valid_folder /criteo_data/criteo_raw_parquet_valid \
+--output_folder /criteo_data/criteo_processed_parquet \
+--devices 0,1,2,3 \
+--protocol tcp \
+--device_limit_frac 0.8 \
+--device_pool_frac 0.9 \
+--num_io_threads 4 \
+--part_mem_frac 0.08 \
+--out_files_per_proc 8 \
+--freq_limit 6 \
+--shuffle PER_PARTITION
+```
