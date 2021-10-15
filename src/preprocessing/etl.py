@@ -6,7 +6,7 @@ import os
 
 try:
     import nvtabular as nvt
-    from nvtabular.utils import device_mem_size, get_rmm_size
+    from nvtabular.utils import device_mem_size
     from nvtabular.io.shuffle import Shuffle
     from nvtabular.ops import (
         Categorify,
@@ -19,9 +19,6 @@ try:
     from dask.distributed import Client
 except:
     pass
-
-# from dask_cuda import LocalCUDACluster
-# from dask.distributed import Client
 
 from google.cloud import bigquery
 
@@ -43,21 +40,14 @@ def get_criteo_col_dtypes() -> Dict[str,Union[str, np.int32]]:
     return col_dtypes
 
 
-def create_convert_cluster():
-    '''Create a Dask cluster'''
-    cluster = LocalCUDACluster(
-        rmm_pool_size=get_rmm_size(0.8 * device_mem_size())
-    )
-    return Client(cluster)
-
-
 def create_csv_dataset(
     data_paths, 
     sep,
     recursive,
     col_dtypes,
+    part_mem_frac,
     client
-) :
+):
     '''Create nvt.Dataset definition for CSV files'''
     fs_spec = fsspec.filesystem('gs')
     rec_symbol = '**' if recursive else '*'
@@ -85,6 +75,7 @@ def create_csv_dataset(
         names=list(col_dtypes.keys()),
         sep=sep,
         dtypes=col_dtypes,
+        part_size=int(part_mem_frac * device_mem_size()),
         client=client,
         assume_missing=True
     )
@@ -106,7 +97,7 @@ def convert_csv_to_parquet(
     )
 
 
-def create_criteo_nvt_workflow():
+def create_criteo_nvt_workflow(client):
     '''Create a nvt.Workflow definition with transformation all the steps'''
     # Columns definition
     cont_names = ["I" + str(x) for x in range(1, 14)]
@@ -121,12 +112,13 @@ def create_criteo_nvt_workflow():
     features = cat_features + cont_features + ['label']
 
     # Create and save workflow
-    return nvt.Workflow(features)
+    return nvt.Workflow(features, client)
 
 
-def create_transform_cluster(
-    device_limit_frac: float,
-    device_pool_frac: float,
+def create_cluster(
+    n_workers, 
+    device_limit_frac,
+    device_pool_frac,
 ):
     '''
     Create a Dask cluster to apply the transformations steps to the Dataset
@@ -137,6 +129,7 @@ def create_transform_cluster(
     rmm_pool_size = (device_pool_size // 256) * 256
 
     cluster = LocalCUDACluster(
+        n_workers=n_workers,
         device_memory_limit=device_limit,
         rmm_pool_size=rmm_pool_size
     )
@@ -145,9 +138,9 @@ def create_transform_cluster(
 
 
 def create_parquet_dataset(
+    client,
     data_path,
-    part_mem_frac,
-    client
+    part_mem_frac
 ):
     '''Create a nvt.Dataset definition for the parquet files.'''
     fs = fsspec.filesystem('gs')
@@ -161,7 +154,7 @@ def create_parquet_dataset(
     file_list = [os.path.join('gs://', i) for i in file_list]
 
     return nvt.Dataset(
-        file_list, # os.path.join(data_path, '*.parquet'),
+        file_list,
         engine="parquet", 
         part_size=int(part_mem_frac * device_mem_size()),
         client=client
@@ -219,8 +212,7 @@ def save_dataset(
 
 def extract_table_from_bq(
     client,
-    output_converted,
-    folder_name,
+    output_dir,
     dataset_ref,
     table_id,
     location = 'us'
@@ -229,12 +221,7 @@ def extract_table_from_bq(
     extract_job_config = bigquery.ExtractJobConfig()
     extract_job_config.destination_format = 'PARQUET'
 
-    bq_glob_path = os.path.join(
-        'gs://', 
-        output_converted,
-        folder_name,
-        f'{folder_name}-*.parquet'
-    )
+    bq_glob_path = os.path.join(output_dir, 'criteo-*.parquet')
     table_ref = dataset_ref.table(table_id)
 
     extract_job = client.extract_table(
