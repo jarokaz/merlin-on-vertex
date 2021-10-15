@@ -113,21 +113,37 @@ def preprocessing_bq(
     transformed_output_dir: str,
     shuffle: str
 ):
-    # === Export Bigquery tables as PARQUET files
-    export_parquet_from_bq = components.export_parquet_from_bq_op(
+    # ==================== Exporting tables as Parquet ========================
+
+    # === Export train table as parquet
+    export_train_from_bq = components.export_parquet_from_bq_op(
         bq_project=bq_project,
         bq_dataset_name=bq_dataset_name,
         bq_location=bq_location,
-        bq_trian_table_name=bq_train_table_name,
-        bq_table_valid=bq_valid_table_name,
+        bq_table_name=bq_train_table_name,
+        split='train',
         output_dir=parquet_output_dir,
     )
-    export_parquet_from_bq.set_cpu_limit(config.CPU_LIMIT)
-    export_parquet_from_bq.set_memory_limit(config.MEMORY_LIMIT)
+    export_train_from_bq.set_cpu_limit(config.CPU_LIMIT)
+    export_train_from_bq.set_memory_limit(config.MEMORY_LIMIT)
+
+    # === Export valid table as parquet
+    export_valid_from_bq = components.export_parquet_from_bq_op(
+        bq_project=bq_project,
+        bq_dataset_name=bq_dataset_name,
+        bq_location=bq_location,
+        bq_table_name=bq_valid_table_name,
+        split='valid',
+        output_dir=parquet_output_dir,
+    )
+    export_valid_from_bq.set_cpu_limit(config.CPU_LIMIT)
+    export_valid_from_bq.set_memory_limit(config.MEMORY_LIMIT)
+
+    # ==================== Analyse train dataset ==============================
 
     # === Analyze train data split
     analyze_dataset = components.analyze_dataset_op(
-        datasets=export_parquet_from_bq.outputs['output_datasets'],
+        parquet_dataset=export_train_from_bq.outputs['output_dataset'],
         workflow_path=workflow_path,
         n_workers=int(config.GPU_LIMIT)
     )
@@ -136,9 +152,12 @@ def preprocessing_bq(
     analyze_dataset.set_gpu_limit(config.GPU_LIMIT)
     analyze_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
 
+    # ==================== Transform train and validation dataset =============
+
     # === Transform train data split
     transform_train_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
+        parquet_dataset=export_train_from_bq.outputs['output_dataset'],
         transformed_output_dir=transformed_output_dir,
         n_workers=int(config.GPU_LIMIT)
     )
@@ -150,8 +169,8 @@ def preprocessing_bq(
     # === Transform eval data split
     transform_valid_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
+        parquet_dataset=export_valid_from_bq.outputs['output_dataset'],
         transformed_output_dir=transformed_output_dir,
-        split_name='valid',
         n_workers=int(config.GPU_LIMIT)
     )
     transform_valid_dataset.set_cpu_limit(config.CPU_LIMIT)
