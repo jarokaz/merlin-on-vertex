@@ -295,7 +295,7 @@ def transform_dataset_op(
 )
 def export_parquet_from_bq_op(
     output_datasets: Output[Dataset],
-    output_converted: str,
+    output_dir: str,
     bq_project: str,
     bq_dataset_id: str,
     bq_table_train: str,
@@ -310,10 +310,10 @@ def export_parquet_from_bq_op(
         Usage:
             output_datasets.metadata['train']
                 .example: 'gs://bucket_name/subfolder/train/'
-    output_converted: str
+    output_dir: str
         Path to write the exported parquet files.
         Format:
-            '<bucket_name>/<subfolder1>/<subfolder>/'
+            'gs://<bucket_name>/<subfolder1>/<subfolder>/'
     bq_project: str
         GCP project id
         Format:
@@ -346,20 +346,18 @@ def export_parquet_from_bq_op(
         ['train', 'valid'], 
         [bq_table_train, bq_table_valid]
     ):
-        logging.info(f'Extracting {table_id}')
+        full_output_path = os.path.join(output_dir, folder_name)
+        logging.info(
+            f'Extracting {table_id} table to {full_output_path} path.'
+        )
         etl.extract_table_from_bq(
             client=client,
-            output_converted=output_converted,
-            folder_name=folder_name,
+            output_dir=full_output_path,
             dataset_ref=dataset_ref,
             table_id=table_id,
             location=location
         )
-        
-        full_output_path = os.path.join('gs://', output_converted, folder_name)
-        logging.info(
-            f'Saving metadata for {folder_name} path: {full_output_path}'
-        )
+
         output_datasets.metadata[folder_name] = full_output_path
     
     logging.info('Finished exporting to GCS.')

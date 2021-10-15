@@ -14,55 +14,70 @@
 
 """Preprocessing pipeline"""
 
-from ..preprocessing import kfp_components
+from . import components
 from kfp.v2 import dsl
+from . import config
 
-PIPELINE_NAME = 'nvt-pipeline-bq'
+GKE_ACCELERATOR_KEY = 'cloud.google.com/gke-accelerator'
 
 
 @dsl.pipeline(
-    name=PIPELINE_NAME
+    name=config.PREPROCESS_BQ_PIPELINE_NAME
 )
-def preprocessing_pipeline_bq(
+def preprocessing_bq(
     bq_table_train: str,
     bq_table_valid: str,
-    output_converted: str,
+    output_dir: str,
     bq_project: str,
     bq_dataset_id: str,
     location: str,
     workflow_path: str,
-    output_transformed: str,
+    transformed_output_dir: str,
     shuffle: str,
     recursive: bool
 ):
     # === Export Bigquery tables as PARQUET files
-    export_parquet_from_bq = kfp_components.export_parquet_from_bq_op(
+    export_parquet_from_bq = components.export_parquet_from_bq_op(
         bq_table_train=bq_table_train,
         bq_table_valid=bq_table_valid,
-        output_converted=output_converted,
+        output_dir=output_dir,
         bq_project=bq_project,
         bq_dataset_id=bq_dataset_id,
         location=location
     )
-    export_parquet_from_bq.set_cpu_limit("8")
-    export_parquet_from_bq.set_memory_limit("32G")
-    
-    # === Fit dataset
-    fit_dataset = kfp_components.fit_dataset_op(
+    export_parquet_from_bq.set_cpu_limit(config.CPU_LIMIT)
+    export_parquet_from_bq.set_memory_limit(config.MEMORY_LIMIT)
+
+    # === Analyze train data split
+    analyze_dataset = components.analyze_dataset_op(
         datasets=export_parquet_from_bq.outputs['output_datasets'],
         workflow_path=workflow_path,
+        n_workers=int(config.GPU_LIMIT)
     )
-    fit_dataset.set_cpu_limit("8")
-    fit_dataset.set_memory_limit("32G")
-    fit_dataset.set_gpu_limit("1")
-    fit_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
+    analyze_dataset.set_cpu_limit(config.CPU_LIMIT)
+    analyze_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    analyze_dataset.set_gpu_limit(config.GPU_LIMIT)
+    analyze_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
 
-    # === Transform dataset
-    transform_dataset = kfp_components.transform_dataset_op(
-        workflow=fit_dataset.outputs['workflow'],
-        output_transformed=output_transformed,
+    # === Transform train data split
+    transform_train_dataset = components.transform_dataset_op(
+        workflow=analyze_dataset.outputs['workflow'],
+        transformed_output_dir=transformed_output_dir,
+        n_workers=int(config.GPU_LIMIT)
     )
-    transform_dataset.set_cpu_limit("8")
-    transform_dataset.set_memory_limit("32G")
-    transform_dataset.set_gpu_limit("1")
-    transform_dataset.add_node_selector_constraint('cloud.google.com/gke-accelerator', 'nvidia-tesla-t4')
+    transform_train_dataset.set_cpu_limit(config.CPU_LIMIT)
+    transform_train_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    transform_train_dataset.set_gpu_limit(config.GPU_LIMIT)
+    transform_train_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
+    
+    # === Transform eval data split
+    transform_valid_dataset = components.transform_dataset_op(
+        workflow=analyze_dataset.outputs['workflow'],
+        transformed_output_dir=transformed_output_dir,
+        split_name='valid',
+        n_workers=int(config.GPU_LIMIT)
+    )
+    transform_valid_dataset.set_cpu_limit(config.CPU_LIMIT)
+    transform_valid_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    transform_valid_dataset.set_gpu_limit(config.GPU_LIMIT)
+    transform_valid_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)

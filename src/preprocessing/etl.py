@@ -210,8 +210,7 @@ def save_dataset(
 
 def extract_table_from_bq(
     client,
-    output_converted,
-    folder_name,
+    output_dir,
     dataset_ref,
     table_id,
     location = 'us'
@@ -220,12 +219,7 @@ def extract_table_from_bq(
     extract_job_config = bigquery.ExtractJobConfig()
     extract_job_config.destination_format = 'PARQUET'
 
-    bq_glob_path = os.path.join(
-        'gs://', 
-        output_converted,
-        folder_name,
-        f'{folder_name}-*.parquet'
-    )
+    bq_glob_path = os.path.join(output_dir, 'criteo-*.parquet')
     table_ref = dataset_ref.table(table_id)
 
     extract_job = client.extract_table(
