@@ -264,7 +264,7 @@ def transform_dataset_op(
     logging.info(f'Creating dataset definition for {split} split')
     dataset = etl.create_parquet_dataset(
         client=client,
-        data_path=parquet_dataset.metadata['dataset'],
+        data_path=parquet_dataset.metadata['dataset_path'],
         part_mem_frac=part_mem_frac
     )
 
@@ -284,7 +284,7 @@ def transform_dataset_op(
     logging.info('Applying transformation')
     etl.save_dataset(dataset, transformed_fuse_dir)
 
-    transformed_dataset.metadata['dataset'] = os.path.join(
+    transformed_dataset.metadata['dataset_path'] = os.path.join(
         transformed_output_dir, split
     )
     transformed_dataset.metadata['split'] = split
@@ -294,12 +294,12 @@ def transform_dataset_op(
     base_image=config.IMAGE_URI
 )
 def export_parquet_from_bq_op(
-    output_datasets: Output[Dataset],
+    output_dataset: Output[Dataset],
     bq_project: str,
     bq_location: str,
     bq_dataset_name: str,
-    bq_train_table_name: str,
-    bq_valid_table_name: str,
+    bq_table_name: str,
+    split: str,
     output_dir: str
 ):
     '''
@@ -342,22 +342,21 @@ def export_parquet_from_bq_op(
     client = bigquery.Client(project=bq_project)
     dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_name)
 
-    for folder_name, table_id in zip(
-        ['train', 'valid'], 
-        [bq_train_table_name, bq_valid_table_name]
-    ):
-        full_output_path = os.path.join(output_dir, folder_name)
-        logging.info(
-            f'Extracting {table_id} table to {full_output_path} path.'
-        )
-        etl.extract_table_from_bq(
-            client=client,
-            output_dir=full_output_path,
-            dataset_ref=dataset_ref,
-            table_id=table_id,
-            location=bq_location
-        )
-
-        output_datasets.metadata[folder_name] = full_output_path
+    full_output_path = os.path.join(output_dir, split)
     
+    logging.info(
+        f'Extracting {bq_table_name} table to {full_output_path} path.'
+    )
+    etl.extract_table_from_bq(
+        client=client,
+        output_dir=full_output_path,
+        dataset_ref=dataset_ref,
+        table_id=bq_table_name,
+        location=bq_location
+    )
+
+    # Write output path to metadata
+    output_dataset.metadata['dataset_path'] = os.path.join(output_dir, split)
+    output_dataset.metadata['split'] = split
+
     logging.info('Finished exporting to GCS.')
