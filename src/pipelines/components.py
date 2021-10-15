@@ -14,7 +14,6 @@
 
 """Preprocessing components"""
 
-import os
 from kfp.v2 import dsl
 from kfp.v2.dsl import (
     Artifact, 
@@ -27,8 +26,6 @@ from kfp.v2.dsl import (
 )
 
 from typing import Optional
-
-from ..preprocessing.etl import transform_dataset
 from . import config
 
 
@@ -42,7 +39,10 @@ def convert_csv_to_parquet_op(
     output_dir: str,
     sep: str,
     shuffle: Optional[str] = None,
-    recursive: Optional[bool] = False
+    recursive: Optional[bool] = False,
+    device_limit_frac: Optional[float] = 0.8,
+    device_pool_frac: Optional[float] = 0.9,
+    part_mem_frac: Optional[float] = 0.125
 ):
     '''
     Component to convert CSV file(s) to Parquet format using NVTabular.
@@ -93,11 +93,16 @@ def convert_csv_to_parquet_op(
     logging.info('Getting column names and dtypes')
     col_dtypes = etl.get_criteo_col_dtypes()
 
-    logging.info('Creating a Dask CUDA cluster')
-    client = etl.create_convert_cluster()
+    # Create Dask cluster
+    logging.info('Creating Dask cluster.')
+    client = etl.create_cluster(
+        n_workers = int(config.GPU_LIMIT),
+        device_limit_frac = device_limit_frac,
+        device_pool_frac = device_pool_frac
+    )
 
     for folder_name, data_paths in zip(
-        ['train', 'valid'], 
+        ['train', 'valid'],
         [train_paths, valid_paths]
     ):
         logging.info(f'Creating {folder_name} dataset.')
@@ -105,11 +110,12 @@ def convert_csv_to_parquet_op(
             data_paths=data_paths,
             sep=sep,
             recursive=recursive, 
-            col_dtypes=col_dtypes, 
+            col_dtypes=col_dtypes,
+            part_mem_frac=part_mem_frac, 
             client=client
         )
         
-        fuse_output_dir = output_dir.replace("gs://", "/gcs")
+        fuse_output_dir = output_dir.replace('gs://', '/gcs/')
         fuse_output_path = os.path.join(fuse_output_dir, folder_name)
         logging.info(f'Writing parquet file(s) to {fuse_output_path}')
         etl.convert_csv_to_parquet(fuse_output_path, dataset, shuffle)
@@ -167,8 +173,8 @@ def analyze_dataset_op(
 
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
-    client = etl.create_transform_cluster(
-        n_workers = config.GPU_LIMIT,
+    client = etl.create_cluster(
+        n_workers = int(config.GPU_LIMIT),
         device_limit_frac = device_limit_frac, 
         device_pool_frac = device_pool_frac
     )
@@ -230,7 +236,7 @@ def transform_dataset_op(
     transformed_output_dir: str,
         Path in GCS to write the transformed parquet files.
         Format:
-            '<bucket_name>/<subfolder1>/<subfolder>/'
+            'gs://<bucket_name>/<subfolder1>/<subfolder>/'
     '''
     from preprocessing import etl
     import logging
@@ -238,39 +244,44 @@ def transform_dataset_op(
 
     logging.basicConfig(level=logging.INFO)
 
-    # Define output path for transformed files
-    transform_output_dir = os.path.join('gs://', transformed_output_dir, split_name)
-
-    # Get path to dataset to be transformed
-    data_path = workflow.metadata['datasets'][split_name]
-
     # Create Dask cluster
-    client = etl.create_transform_cluster(device_limit_frac, device_pool_frac)
-
-    logging.info(f'Creating dataset definition for {split_name} split')
-    dataset = etl.create_parquet_dataset(
-        data_path=data_path,
-        part_mem_frac=part_mem_frac,
-        client=client
+    client = etl.create_cluster(
+        n_workers=int(config.GPU_LIMIT),
+        device_limit_frac=device_limit_frac, 
+        device_pool_frac=device_pool_frac
     )
+
     logging.info('Loading workflow and statistics')
     criteo_workflow = etl.load_workflow(
         workflow_path=workflow.metadata['workflow'],
         client=client
     )
+
+    logging.info(f'Creating dataset definition for {split_name} split')
+    dataset = etl.create_parquet_dataset(
+        data_path=workflow.metadata['datasets'][split_name],
+        part_mem_frac=part_mem_frac
+    )
+
     logging.info('Workflow is loaded')
-    
     logging.info('Starting workflow transformation')
-    transformed_dataset = etl.transform_dataset(
+    dataset = etl.transform_dataset(
         dataset=dataset,
         workflow=criteo_workflow
     )
-    logging.info('Finished transformation')
 
-    logging.info('Saved transformed data')
-    etl.save_dataset(transformed_dataset, transformed_output_dir)
+    # Define output path for transformed files
+    transformed_fuse_dir = os.path.join(
+        '/gcs',
+        transformed_output_dir, 
+        split_name
+    )
 
-    transformed_dataset.metadata['transformed_dataset'] = transformed_output_dir
+    logging.info('Applying transformation')
+    etl.save_dataset(dataset, transformed_fuse_dir)
+
+    transformed_dataset.metadata['transformed_dataset'] = \
+        os.path.join('gs://', transformed_output_dir)
     transformed_dataset.metadata['original_datasets'] = \
         workflow.metadata.get('datasets')
 
