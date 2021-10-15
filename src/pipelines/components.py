@@ -33,9 +33,9 @@ from . import config
     base_image=config.IMAGE_URI
 )
 def convert_csv_to_parquet_op(
-    output_datasets: Output[Dataset],
-    train_paths: list,
-    valid_paths: list,
+    output_dataset: Output[Dataset],
+    data_paths: list,
+    split: str,
     output_dir: str,
     sep: str,
     n_workers: int,
@@ -102,39 +102,36 @@ def convert_csv_to_parquet_op(
         device_pool_frac = device_pool_frac
     )
 
-    for folder_name, data_paths in zip(
-        ['train', 'valid'],
-        [train_paths, valid_paths]
-    ):
-        logging.info(f'Creating {folder_name} dataset.')
-        dataset = etl.create_csv_dataset(
-            data_paths=data_paths,
-            sep=sep,
-            recursive=recursive, 
-            col_dtypes=col_dtypes,
-            part_mem_frac=part_mem_frac, 
-            client=client
-        )
-        
-        fuse_output_dir = output_dir.replace('gs://', '/gcs/')
-        fuse_output_path = os.path.join(fuse_output_dir, folder_name)
-        logging.info(f'Writing parquet file(s) to {fuse_output_path}')
-        etl.convert_csv_to_parquet(fuse_output_path, dataset, shuffle)
+    logging.info(f'Creating {split} dataset.')
+    dataset = etl.create_csv_dataset(
+        data_paths=data_paths,
+        sep=sep,
+        recursive=recursive, 
+        col_dtypes=col_dtypes,
+        part_mem_frac=part_mem_frac, 
+        client=client
+    )
 
-        # Write output path to metadata
-        output_datasets.metadata[folder_name] = \
-            os.path.join(output_dir, folder_name)
+    fuse_output_dir = os.path.join(
+        output_dir.replace('gs://', '/gcs/'), split
+    )
+    
+    logging.info(f'Writing parquet file(s) to {fuse_output_dir}')
+    etl.convert_csv_to_parquet(fuse_output_dir, dataset, shuffle)
+
+    # Write output path to metadata
+    output_dataset.metadata['dataset_path'] = os.path.join(output_dir, split)
+    output_dataset.metadata['split'] = split
 
 
 @dsl.component(
     base_image=config.IMAGE_URI
 )
 def analyze_dataset_op(
-    datasets: Input[Dataset],
+    parquet_dataset: Input[Dataset],
     workflow: Output[Artifact],
     workflow_path: str,
     n_workers: int,
-    split_name: Optional[str] = 'train',
     device_limit_frac: Optional[float] = 0.8,
     device_pool_frac: Optional[float] = 0.9,
     part_mem_frac: Optional[float] = 0.125
@@ -171,9 +168,6 @@ def analyze_dataset_op(
 
     logging.basicConfig(level=logging.INFO)
 
-    # Retrieve `split_name` from metadata
-    data_path = datasets.metadata[split_name]
-
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
     client = etl.create_cluster(
@@ -188,13 +182,16 @@ def analyze_dataset_op(
     criteo_workflow = etl.create_criteo_nvt_workflow(client=client)
 
     # Create dataset to be fitted
+    logging.info(f'Creating dataset to be analysed.')
     dataset = etl.create_parquet_dataset(
         client=client,
-        data_path=data_path,
+        data_path=parquet_dataset.metadata['dataset_path'],
         part_mem_frac=part_mem_frac
     )
 
-    logging.info('Starting workflow fitting')
+    split = parquet_dataset.metadata['split']
+
+    logging.info(f'Starting workflow fitting for {split} split.')
     criteo_workflow = etl.analyze_dataset(criteo_workflow, dataset)
     logging.info('Finished generating statistics for dataset.')
 
@@ -203,7 +200,6 @@ def analyze_dataset_op(
     logging.info('Workflow saved to GCS')
 
     workflow.metadata['workflow'] = workflow_path_fuse
-    workflow.metadata['datasets'] = datasets.metadata
 
 
 @dsl.component(
@@ -211,10 +207,10 @@ def analyze_dataset_op(
 )
 def transform_dataset_op(
     workflow: Input[Artifact],
+    parquet_dataset: Input[Dataset],
     transformed_dataset: Output[Dataset],
     transformed_output_dir: str,
     n_workers: int,
-    split_name: str = 'train',
     shuffle: str = None,
     device_limit_frac: float = 0.8,
     device_pool_frac: float = 0.9,
@@ -251,6 +247,7 @@ def transform_dataset_op(
     logging.basicConfig(level=logging.INFO)
 
     # Create Dask cluster
+    logging.info('Creating Dask cluster.')
     client = etl.create_cluster(
         n_workers=n_workers,
         device_limit_frac=device_limit_frac, 
@@ -263,10 +260,12 @@ def transform_dataset_op(
         client=client
     )
 
-    logging.info(f'Creating dataset definition for {split_name} split')
+    split = parquet_dataset.metadata['split']
+
+    logging.info(f'Creating dataset definition for {split} split')
     dataset = etl.create_parquet_dataset(
         client=client,
-        data_path=workflow.metadata['datasets'][split_name],
+        data_path=parquet_dataset.metadata['dataset'],
         part_mem_frac=part_mem_frac
     )
 
@@ -280,16 +279,16 @@ def transform_dataset_op(
     # Define output path for transformed files
     transformed_fuse_dir = os.path.join(
         transformed_output_dir.replace('gs://', '/gcs/'), 
-        split_name
+        split
     )
 
     logging.info('Applying transformation')
     etl.save_dataset(dataset, transformed_fuse_dir)
 
-    transformed_dataset.metadata['transformed_dataset'] = \
-        os.path.join(transformed_output_dir, split_name)
-    transformed_dataset.metadata['original_datasets'] = \
-        workflow.metadata.get('datasets')
+    transformed_dataset.metadata['dataset'] = os.path.join(
+        transformed_output_dir, split
+    )
+    transformed_dataset.metadata['split'] = split
 
 
 @dsl.component(
@@ -298,7 +297,7 @@ def transform_dataset_op(
 def export_parquet_from_bq_op(
     output_datasets: Output[Dataset],
     bq_project: str,
-    bq_location: str
+    bq_location: str,
     bq_dataset_name: str,
     bq_train_table_name: str,
     bq_valid_table_name: str,
