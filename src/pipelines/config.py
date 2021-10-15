@@ -17,7 +17,7 @@ import os
 
 IMAGE_URI = os.getenv("IMAGE_URI", "")
 
-PREPROCESS_GCS_PIPELINE_NAME = os.getenv("PREPROCESS_GCS_PIPELINE_NAME", "nvt-gcs-pipeline")
+PREPROCESS_CSV_PIPELINE_NAME = os.getenv("PREPROCESS_CSV_PIPELINE_NAME", "nvt-csv-pipeline")
 PREPROCESS_BQ_PIPELINE_NAME = os.getenv("PREPROCESS_BQ_PIPELINE_NAME", "nvt-bq-pipeline")
 PREPROCESS_E2E_PIPELINE_NAME = os.getenv("PREPROCESS_E2E_PIPELINE_NAME", "merlin-e2e-pipeline")
 

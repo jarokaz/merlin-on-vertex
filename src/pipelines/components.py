@@ -297,12 +297,12 @@ def transform_dataset_op(
 )
 def export_parquet_from_bq_op(
     output_datasets: Output[Dataset],
-    output_dir: str,
     bq_project: str,
-    bq_dataset_id: str,
-    bq_table_train: str,
-    bq_table_valid: str,
-    location: str
+    bq_location: str
+    bq_dataset_name: str,
+    bq_train_table_name: str,
+    bq_valid_table_name: str,
+    output_dir: str
 ):
     '''
     Component to export PARQUET files from a bigquery table.
@@ -342,11 +342,11 @@ def export_parquet_from_bq_op(
     logging.basicConfig(level=logging.INFO)
 
     client = bigquery.Client(project=bq_project)
-    dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_id)
+    dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_name)
 
     for folder_name, table_id in zip(
         ['train', 'valid'], 
-        [bq_table_train, bq_table_valid]
+        [bq_train_table_name, bq_valid_table_name]
     ):
         full_output_path = os.path.join(output_dir, folder_name)
         logging.info(
@@ -357,7 +357,7 @@ def export_parquet_from_bq_op(
             output_dir=full_output_path,
             dataset_ref=dataset_ref,
             table_id=table_id,
-            location=location
+            location=bq_location
         )
 
         output_datasets.metadata[folder_name] = full_output_path
