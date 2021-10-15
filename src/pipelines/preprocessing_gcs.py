@@ -39,7 +39,8 @@ def preprocessing_gcs(
         train_paths=train_paths,
         valid_paths=valid_paths,
         output_dir=parquet_output_dir,
-        sep=sep
+        sep=sep,
+        n_workers=int(config.GPU_LIMIT)
     )
     convert_csv_to_parquet.set_cpu_limit(config.CPU_LIMIT)
     convert_csv_to_parquet.set_memory_limit(config.MEMORY_LIMIT)
@@ -50,6 +51,7 @@ def preprocessing_gcs(
     analyze_dataset = components.analyze_dataset_op(
         datasets=convert_csv_to_parquet.outputs['output_datasets'],
         workflow_path=workflow_path,
+        n_workers=int(config.GPU_LIMIT)
     )
     analyze_dataset.set_cpu_limit(config.CPU_LIMIT)
     analyze_dataset.set_memory_limit(config.MEMORY_LIMIT)
@@ -60,6 +62,7 @@ def preprocessing_gcs(
     transform_train_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         transformed_output_dir=transformed_output_dir,
+        n_workers=int(config.GPU_LIMIT)
     )
     transform_train_dataset.set_cpu_limit(config.CPU_LIMIT)
     transform_train_dataset.set_memory_limit(config.MEMORY_LIMIT)
@@ -70,7 +73,8 @@ def preprocessing_gcs(
     transform_valid_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         transformed_output_dir=transformed_output_dir,
-        split_name='valid'
+        split_name='valid',
+        n_workers=int(config.GPU_LIMIT)
     )
     transform_valid_dataset.set_cpu_limit(config.CPU_LIMIT)
     transform_valid_dataset.set_memory_limit(config.MEMORY_LIMIT)

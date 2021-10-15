@@ -38,6 +38,7 @@ def convert_csv_to_parquet_op(
     valid_paths: list,
     output_dir: str,
     sep: str,
+    n_workers: int,
     shuffle: Optional[str] = None,
     recursive: Optional[bool] = False,
     device_limit_frac: Optional[float] = 0.8,
@@ -96,7 +97,7 @@ def convert_csv_to_parquet_op(
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
     client = etl.create_cluster(
-        n_workers = int(config.GPU_LIMIT),
+        n_workers = n_workers,
         device_limit_frac = device_limit_frac,
         device_pool_frac = device_pool_frac
     )
@@ -132,6 +133,7 @@ def analyze_dataset_op(
     datasets: Input[Dataset],
     workflow: Output[Artifact],
     workflow_path: str,
+    n_workers: int,
     split_name: Optional[str] = 'train',
     device_limit_frac: Optional[float] = 0.8,
     device_pool_frac: Optional[float] = 0.9,
@@ -175,7 +177,7 @@ def analyze_dataset_op(
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
     client = etl.create_cluster(
-        n_workers = int(config.GPU_LIMIT),
+        n_workers = n_workers,
         device_limit_frac = device_limit_frac, 
         device_pool_frac = device_pool_frac
     )
@@ -210,6 +212,7 @@ def transform_dataset_op(
     workflow: Input[Artifact],
     transformed_dataset: Output[Dataset],
     transformed_output_dir: str,
+    n_workers: int,
     split_name: str = 'train',
     shuffle: str = None,
     device_limit_frac: float = 0.8,
@@ -248,7 +251,7 @@ def transform_dataset_op(
 
     # Create Dask cluster
     client = etl.create_cluster(
-        n_workers=int(config.GPU_LIMIT),
+        n_workers=n_workers,
         device_limit_frac=device_limit_frac, 
         device_pool_frac=device_pool_frac
     )
