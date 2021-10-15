@@ -57,22 +57,22 @@ def preprocessing_gcs(
     analyze_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
 
     # === Transform train data split
-    transform_dataset = components.transform_dataset_op(
+    transform_train_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         transformed_output_dir=transformed_output_dir,
     )
-    transform_dataset.set_cpu_limit(config.CPU_LIMIT)
-    transform_dataset.set_memory_limit(config.MEMORY_LIMIT)
-    transform_dataset.set_gpu_limit(config.GPU_LIMIT)
-    transform_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
+    transform_train_dataset.set_cpu_limit(config.CPU_LIMIT)
+    transform_train_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    transform_train_dataset.set_gpu_limit(config.GPU_LIMIT)
+    transform_train_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
     
     # === Transform eval data split
-    transform_dataset = components.transform_dataset_op(
+    transform_valid_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         transformed_output_dir=transformed_output_dir,
         split_name='valid'
     )
-    transform_dataset.set_cpu_limit(config.CPU_LIMIT)
-    transform_dataset.set_memory_limit(config.MEMORY_LIMIT)
-    transform_dataset.set_gpu_limit(config.GPU_LIMIT)
-    transform_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
+    transform_valid_dataset.set_cpu_limit(config.CPU_LIMIT)
+    transform_valid_dataset.set_memory_limit(config.MEMORY_LIMIT)
+    transform_valid_dataset.set_gpu_limit(config.GPU_LIMIT)
+    transform_valid_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)

@@ -71,7 +71,7 @@ def convert_csv_to_parquet_op(
     output_dir: str
         Path in GCS to write the converted parquet files.
         Format:
-            '<bucket_name>/<subfolder1>/<subfolder>'
+            'gs://<bucket_name>/<subfolder1>/<subfolder>'
     recursive: bool
         If it must recursivelly look for files in path.
     shuffle: str
@@ -121,7 +121,8 @@ def convert_csv_to_parquet_op(
         etl.convert_csv_to_parquet(fuse_output_path, dataset, shuffle)
 
         # Write output path to metadata
-        output_datasets.metadata[folder_name] = os.path.join(output_dir, folder_name)
+        output_datasets.metadata[folder_name] = \
+            os.path.join(output_dir, folder_name)
 
 
 @dsl.component(
@@ -194,10 +195,11 @@ def analyze_dataset_op(
     criteo_workflow = etl.analyze_dataset(criteo_workflow, dataset)
     logging.info('Finished generating statistics for dataset.')
 
-    etl.save_workflow(criteo_workflow, os.path.join('/gcs', workflow_path))
+    workflow_path_fuse = workflow_path.replace('gs://', '/gcs/')
+    etl.save_workflow(criteo_workflow, workflow_path_fuse)
     logging.info('Workflow saved to GCS')
 
-    workflow.metadata['workflow'] = os.path.join('/gcs', workflow_path)
+    workflow.metadata['workflow'] = workflow_path_fuse
     workflow.metadata['datasets'] = datasets.metadata
 
 
@@ -272,8 +274,7 @@ def transform_dataset_op(
 
     # Define output path for transformed files
     transformed_fuse_dir = os.path.join(
-        '/gcs',
-        transformed_output_dir, 
+        transformed_output_dir.replace('gs://', '/gcs/'), 
         split_name
     )
 
@@ -281,7 +282,7 @@ def transform_dataset_op(
     etl.save_dataset(dataset, transformed_fuse_dir)
 
     transformed_dataset.metadata['transformed_dataset'] = \
-        os.path.join('gs://', transformed_output_dir)
+        os.path.join(transformed_output_dir, split_name)
     transformed_dataset.metadata['original_datasets'] = \
         workflow.metadata.get('datasets')
 
