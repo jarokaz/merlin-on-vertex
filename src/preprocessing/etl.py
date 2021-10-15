@@ -138,6 +138,7 @@ def create_cluster(
 
 
 def create_parquet_dataset(
+    client,
     data_path,
     part_mem_frac
 ):
@@ -155,7 +156,8 @@ def create_parquet_dataset(
     return nvt.Dataset(
         file_list,
         engine="parquet", 
-        part_size=int(part_mem_frac * device_mem_size())
+        part_size=int(part_mem_frac * device_mem_size()),
+        client=client
     )
 
 

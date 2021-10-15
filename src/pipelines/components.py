@@ -189,6 +189,7 @@ def analyze_dataset_op(
 
     # Create dataset to be fitted
     dataset = etl.create_parquet_dataset(
+        client=client,
         data_path=data_path,
         part_mem_frac=part_mem_frac
     )
@@ -264,6 +265,7 @@ def transform_dataset_op(
 
     logging.info(f'Creating dataset definition for {split_name} split')
     dataset = etl.create_parquet_dataset(
+        client=client,
         data_path=workflow.metadata['datasets'][split_name],
         part_mem_frac=part_mem_frac
     )
