@@ -26,15 +26,21 @@ def main():
     
     warnings.filterwarnings("ignore")
 
+    print('*** Checking if server is alive')
     triton_client.is_server_live()
     
+    print('*** Getting repository index')
     triton_client.get_model_repository_index()
     
-    triton_client.load_model(model_name="deepfm_nvt")
     
-    triton_client.load_model(model_name="deepfm")
+    print('*** Loading models')
+    #triton_client.load_model(model_name="deepfm_nvt")
     
-    triton_client.load_model(model_name="deepfm_ens")
+    #triton_client.load_model(model_name="deepfm")
+    
+    #triton_client.load_model(model_name="deepfm_ens")
+    
+    #return
     
     df_lib = get_lib()
     
@@ -53,6 +59,7 @@ def main():
         inputs.append(httpclient.InferInput(col_names[i], d.shape, np_to_triton_dtype(col_dtypes[i])))
         inputs[i].set_data_from_numpy(d)
         
+    print('*** Invoking prediction')
     outputs = [httpclient.InferRequestedOutput("OUTPUT0")]
 
     response = triton_client.infer("deepfm_ens", inputs, request_id="1", outputs=outputs)
