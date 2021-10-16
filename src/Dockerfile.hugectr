@@ -4,4 +4,4 @@ RUN pip3 install cloudml-hypertune
 
 WORKDIR /src
 
-COPY trainer ./trainer
+COPY training/hugectr/ ./
