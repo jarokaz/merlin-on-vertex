@@ -2,10 +2,10 @@ import nvtabular as nvt
 from nvtabular.inference.triton import export_hugectr_ensemble
 
 
-WORKFLOW_PATH = '/criteo_data/criteo_processed_parquet_0.6/workflow'
-MODEL_GRAPH_PATH = '/criteo_data/model/graph/deepfm.json'
-MODEL_PARAMS_PATH = '/criteo_data/model/parameters/'
-OUTPUT_PATH = '/criteo_data/model_ensemble_t2/'
+WORKFLOW_PATH = '/criteo_data/criteo_processed_parquet_0.6_t1/workflow'
+MODEL_GRAPH_PATH = '/criteo_data/model_t1/graph/deepfm.json'
+MODEL_PARAMS_PATH = '/criteo_data/model_t1/parameters/'
+OUTPUT_PATH = '/criteo_data/model_ensemble_t1/'
 NUM_SLOTS = 26
 MAX_NNZ = 2
 EMBEDDING_VECTOR_SIZE = 11
