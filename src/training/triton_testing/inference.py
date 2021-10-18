@@ -26,21 +26,7 @@ def main():
     
     warnings.filterwarnings("ignore")
 
-    print('*** Checking if server is alive')
     triton_client.is_server_live()
-    
-    print('*** Getting repository index')
-    triton_client.get_model_repository_index()
-    
-    
-    print('*** Loading models')
-    #triton_client.load_model(model_name="deepfm_nvt")
-    
-    #triton_client.load_model(model_name="deepfm")
-    
-    #triton_client.load_model(model_name="deepfm_ens")
-    
-    #return
     
     df_lib = get_lib()
     
@@ -65,8 +51,6 @@ def main():
     response = triton_client.infer("deepfm_ens", inputs, request_id="1", outputs=outputs)
 
     print("predicted sigmoid result:\n", response.as_numpy("OUTPUT0"))
-    
-    
     
 
 if __name__ == '__main__':

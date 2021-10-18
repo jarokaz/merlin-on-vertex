@@ -29,11 +29,11 @@ docker run -it --rm --gpus all \
 -v /home/jupyter/merlin-on-vertex/src/training/dataprep:/src \
 -w /src \
 -v /home/jupyter/data:/criteo_data \
-nvcr.io/nvidia/merlin/merlin-training:21.09 \
+nvcr.io/nvidia/merlin/merlin-training:0.6 \
 python preprocess.py \
 --train_folder /criteo_data/criteo_raw_parquet_train \
 --valid_folder /criteo_data/criteo_raw_parquet_valid \
---output_folder /criteo_data/criteo_processed_parquet \
+--output_folder /criteo_data/criteo_processed_parquet_0.6_t1 \
 --devices 0,1,2,3 \
 --protocol tcp \
 --device_limit_frac 0.8 \
@@ -99,14 +99,14 @@ python preprocess-fsspec.py \
 
 ```
 docker run -it --rm --gpus all \
--v /home/jupyter/merlin-on-vertex/src/training/hugectr:/src \
+-v /home/jupyter/merlin-on-vertex/src/training/dataprep:/src \
 -w /src \
 -v /home/jupyter/data:/criteo_data \
 nvcr.io/nvidia/merlin/merlin-inference:0.6 \
 python preprocess.py \
 --train_folder /criteo_data/criteo_raw_parquet_train \
 --valid_folder /criteo_data/criteo_raw_parquet_valid \
---output_folder /criteo_data/criteo_processed_parquet \
+--output_folder /criteo_data/criteo_processed_parquet_0.6_t1 \
 --devices 0,1,2,3 \
 --protocol tcp \
 --device_limit_frac 0.8 \
