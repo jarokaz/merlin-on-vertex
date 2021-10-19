@@ -11,7 +11,7 @@ AUTH_TOKEN=$(gcloud auth application-default print-access-token)
 RUNTIME_BODY="{ 
   'access_config': {
       'access_type': 'SINGLE_USER',
-      'runtime_owner': 'jarekk@google.com'
+      'runtime_owner': '<USER ID>'
   }, 
   'virtual_machine': { 
     'virtual_machine_config': {
