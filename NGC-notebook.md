@@ -21,11 +21,11 @@ RUNTIME_BODY="{
       },
       'container_images': {
         'repository':'nvcr.io/nvidia/merlin/merlin-training',
-        'tag':'0.6'
+        'tag':'21.09'
         },
       'metadata': {
       },
-      'machine_type':'n1-highgpu-2',
+      'machine_type':'a2-highgpu-2g',
       'accelerator_config': {
         'type': 'NVIDIA_TESLA_A100',
         'core_count': '2'
@@ -34,7 +34,7 @@ RUNTIME_BODY="{
   },
 }"
  
-RUNTIME_NAME=jk-merlin-curl
+RUNTIME_NAME=jk-merlin-a2-2
  
 curl -X POST https://${BASE_ADDRESS}/v1/projects/$PROJECT_ID/locations/$LOCATION/runtimes?runtime_id=$RUNTIME_NAME -d "${RUNTIME_BODY}" \
  -H "Content-Type: application/json" \
@@ -77,7 +77,7 @@ RUNTIME_BODY="{
   },
 }"
  
-RUNTIME_NAME=jk-merlin-curl
+RUNTIME_NAME=jk-merlin-curl-0-6
  
 curl -X POST https://${BASE_ADDRESS}/v1/projects/$PROJECT_ID/locations/$LOCATION/runtimes?runtime_id=$RUNTIME_NAME -d "${RUNTIME_BODY}" \
  -H "Content-Type: application/json" \
