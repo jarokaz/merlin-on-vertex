@@ -5,7 +5,7 @@
 
 BASE_ADDRESS=notebooks.googleapis.com
 LOCATION=us-central1
-PROJECT_ID=jk-mlops-dev
+PROJECT_ID=<YOUR PROJECT>
 AUTH_TOKEN=$(gcloud auth application-default print-access-token)
 
 RUNTIME_BODY="{ 
