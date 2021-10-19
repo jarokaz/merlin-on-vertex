@@ -47,13 +47,13 @@ curl -X POST https://${BASE_ADDRESS}/v1/projects/$PROJECT_ID/locations/$LOCATION
 
 
 ```
-curl -X GET https://${BASE_ADDRESS}/v1/projects/$PROJECT_ID/locations/$LOCATION/runtimes/jk-merlin-dev \
+curl -X GET https://${BASE_ADDRESS}/v1/projects/$PROJECT_ID/locations/$LOCATION/runtimes/${RUNTIME_NAME} \
 -H "Content-Type: application/json"  -H "Authorization: Bearer $AUTH_TOKEN" -v
 ```
 
 ### Delete the instance
 
 ```
-curl -X DELETE https://${BASE_ADDRESS}/v1/projects/$PROJECT_ID/locations/$LOCATION/runtimes/jk-merlin-dev  \
+curl -X DELETE https://${BASE_ADDRESS}/v1/projects/$PROJECT_ID/locations/$LOCATION/runtimes/{RUNTIM_NAME}  \
 -H "Content-Type: application/json"  -H "Authorization: Bearer $AUTH_TOKEN" -v
 ```
