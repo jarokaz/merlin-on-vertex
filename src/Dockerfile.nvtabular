@@ -1,9 +1,10 @@
-FROM gcr.io/deeplearning-platform-release/base-cu110
+FROM nvcr.io/nvidia/merlin/merlin-training:21.09
 
 WORKDIR /nvtabular
 
-RUN conda install -c nvidia -c rapidsai -c numba -c conda-forge pynvml dask-cuda nvtabular=0.7.0 cudatoolkit=11.0
-RUN pip install google-cloud-bigquery gcsfs tqdm
+RUN pip install -U pip
+
+RUN pip install google-cloud-bigquery gcsfs
 RUN pip install google-cloud-aiplatform kfp
 
 COPY ./preprocessing ./preprocessing

@@ -29,7 +29,8 @@ from . import config
 
 
 @dsl.component(
-    base_image=config.IMAGE_URI
+    base_image=config.IMAGE_URI,
+    install_kfp_package=False
 )
 def convert_csv_to_parquet_op(
     output_dataset: Output[Dataset],
@@ -124,7 +125,8 @@ def convert_csv_to_parquet_op(
 
 
 @dsl.component(
-    base_image=config.IMAGE_URI
+    base_image=config.IMAGE_URI,
+    install_kfp_package=False
 )
 def analyze_dataset_op(
     parquet_dataset: Input[Dataset],
@@ -202,7 +204,8 @@ def analyze_dataset_op(
 
 
 @dsl.component(
-    base_image=config.IMAGE_URI
+    base_image=config.IMAGE_URI,
+    install_kfp_package=False
 )
 def transform_dataset_op(
     workflow: Input[Artifact],
@@ -291,7 +294,8 @@ def transform_dataset_op(
 
 
 @dsl.component(
-    base_image=config.IMAGE_URI
+    base_image=config.IMAGE_URI,
+    install_kfp_package=False
 )
 def export_parquet_from_bq_op(
     output_dataset: Output[Dataset],
