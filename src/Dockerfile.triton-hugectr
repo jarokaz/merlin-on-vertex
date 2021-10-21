@@ -11,7 +11,7 @@ WORKDIR /
 RUN mkdir /model
 
 # copy model files
-COPY ./models/ /model/models/
+COPY /models/ /model/models/
 
 # run Triton inference server (http server) to respond to prediction requests
 CMD ["tritonserver", "--model-repository=/model/models/", "--backend-config=hugectr,ps=/model/models/ps.json"] 
