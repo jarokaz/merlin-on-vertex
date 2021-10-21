@@ -1,3 +1,6 @@
+import argparse
+import logging
+
 import nvtabular as nvt
 from nvtabular.inference.triton import export_hugectr_ensemble
 
@@ -38,7 +41,7 @@ def export_ensemble(
         label_columns=LABEL_COLUMNS,
         cats=CATEGORICAL_COLUMNS,
         conts=CONTINUOUS_COLUMNS,
-        max_batch_size=MAX_BATCH_SIZE
+        max_batch_size=batch_size,
     )
     
 
@@ -66,26 +69,29 @@ def parse_args():
                         required=False,
                         default='/criteo_data/model_ensemble_t1/',
                         help='Path to output ensemble')
-    parser.add_argument('--batch_size',
+    parser.add_argument('--max_batch_size',
                         type=int,
                         required=False,
                         default=64,
-                        help='Batch size')
+                        help='Max batch size')
     parser.add_argument('--embedding_vector_size',
                         type=int,
                         required=False,
                         default=11,
                         help='embedding_vector_size')
+    
+    args = parser.parse_args()
+    return args
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO, datefmt='%d-%m-%y %H:%M:%S')
     
     args = parse_args()
-    logging.info("Exporting ensemble to: {}".format(args.ensemble_path)
+    logging.info("Exporting ensemble to: {}".format(args.ensemble_path))
     export_ensemble(
         args.workflow_path,
         args.model_graph_path,
         args.model_params_path,
         args.embedding_vector_size,
         args.ensemble_path,
-        args.batch_size)
+        args.max_batch_size)

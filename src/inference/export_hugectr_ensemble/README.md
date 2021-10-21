@@ -31,7 +31,8 @@ python -m trainer.task \
 
 ```
 docker run -it --rm --gpus all --cap-add SYS_NICE \
--v /home/jupyter/merlin-on-vertex/src/training:/src \
+--network host \
+-v /home/jupyter/merlin-on-vertex/src/:/src \
 -v /home/jupyter/data:/criteo_data \
 -w /src \
 nvcr.io/nvidia/merlin/merlin-inference:0.6
@@ -40,8 +41,7 @@ nvcr.io/nvidia/merlin/merlin-inference:0.6
 Start triton
 ```
 tritonserver --model-repository=/criteo_data/model_ensemble_t1 \
---backend-config=hugectr,ps=/criteo_data/model_ensemble_t1/ps.json \
---model-control-mode=explicit
+--backend-config=hugectr,ps=/criteo_data/model_ensemble_t1/ps.json 
 ```
 
 
