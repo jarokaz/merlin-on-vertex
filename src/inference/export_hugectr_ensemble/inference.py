@@ -49,6 +49,64 @@ _examples = {
     'C25': [809724924, -1726799382, -10139646], 
     'C26': [-317696227, -1218975401, -317696227]}
 
+
+class VertexEndpointClient(object):
+    """
+    A convenience wrapper around Vertex AI Prediction REST API.
+    """
+    
+    def __init__(self, service_endpoint):
+        logging.info(
+            "Setting the AI Platform Prediction service endpoint: {}".format(
+                service_endpoint))
+        credentials, _ = google.auth.default()
+        self._authed_session = AuthorizedSession(credentials)
+        self._service_endpoint = service_endpoint
+    
+    def predict(self, project_id, model, version, signature, instances):
+        """
+        Invokes the predict method on the specified signature.
+        """
+        
+        url = '{}/v1/projects/{}/models/{}/versions/{}:predict'.format(
+            self._service_endpoint, project_id, model, version)
+            
+        request_body = {
+            'signature_name': signature,
+            'instances': instances
+        }
+    
+        response = self._authed_session.post(url, data=json.dumps(request_body))
+        return response
+    
+    
+def prepare_inference_request(
+    examples: dict,
+    binary_extension: bool=False):
+    
+    def _prepare_kfs_inference_request(inputs):
+        
+        inference_request = inputs
+        
+        return inference_request
+
+    inputs = []
+    for col_name, values in examples.items():
+        d = np.array(values, dtype=np.int32)
+        d = d.reshape(len(d), 1)
+        inputs.append(httpclient.InferInput(col_name, d.shape, np_to_triton_dtype(np.int32)))
+        inputs[len(inputs)-1].set_data_from_numpy(d)
+    
+    if binary_extension:
+        inference_request = httpclient.InferenceServerClient.generate_request_body(inputs)
+    else:
+        inference_request = _prepare_kfs_inference_request(inputs)
+        
+    return inference_request
+
+
+
+
 def main():
     try:
         triton_client = tritonhttpclient.InferenceServerClient(url="localhost:8000", verbose=True)
@@ -60,20 +118,19 @@ def main():
 
     triton_client.is_server_live()
     
-    inputs = []
-    for col_name, values in _examples.items():
-        d = np.array(values, dtype=np.int32)
-        d = d.reshape(len(d), 1)
-        inputs.append(httpclient.InferInput(col_name, d.shape, np_to_triton_dtype(np.int32)))
-        inputs[len(inputs)-1].set_data_from_numpy(d)
+    payload = prepare_inference_request(_examples, binary_extension=True)
+    
+    
+    
+    print(payload)
+    
+    return
+    #print('*** Invoking prediction')
+    #outputs = [httpclient.InferRequestedOutput("OUTPUT0")]
 
-        
-    print('*** Invoking prediction')
-    outputs = [httpclient.InferRequestedOutput("OUTPUT0")]
+    #response = triton_client.infer("deepfm_ens", inputs, request_id="1", outputs=outputs)
 
-    response = triton_client.infer("deepfm_ens", inputs, request_id="1", outputs=outputs)
-
-    print("predicted sigmoid result:\n", response.as_numpy("OUTPUT0"))
+    #print("predicted sigmoid result:\n", response.as_numpy("OUTPUT0"))
     
 
 if __name__ == '__main__':

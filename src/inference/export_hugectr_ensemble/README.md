@@ -40,8 +40,8 @@ nvcr.io/nvidia/merlin/merlin-inference:0.6
 
 Start triton
 ```
-tritonserver --model-repository=/criteo_data/model_ensemble_t1 \
---backend-config=hugectr,ps=/criteo_data/model_ensemble_t1/ps.json 
+tritonserver --model-repository=/criteo_data/model_ensemble_0.6 \
+--backend-config=hugectr,ps=/criteo_data/model_ensemble_0.6/deepfm/ps.json 
 ```
 
 

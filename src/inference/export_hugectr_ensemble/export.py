@@ -52,22 +52,22 @@ def parse_args():
     parser.add_argument('--workflow_path',
                         type=str,
                         required=False,
-                        default='/criteo_data/criteo_processed_parquet_0.6_t1/workflow',
+                        default='/criteo_data/criteo_processed_parquet_0.6/workflow',
                         help='Path to preprocessing workflow')
     parser.add_argument('--model_graph_path',
                         type=str,
                         required=False,
-                        default='/criteo_data/model_t1/graph/deepfm.json',
+                        default='/criteo_data/model_21.09/graph/deepfm.json',
                         help='Path to model graph')
     parser.add_argument('--model_params_path',
                         type=str,
                         required=False,
-                        default='/criteo_data/model_t1/parameters/',
+                        default='/criteo_data/model_21.09/parameters/',
                         help='Path to model parameters')
     parser.add_argument('--ensemble_path',
                         type=str,
                         required=False,
-                        default='/criteo_data/model_ensemble_t1/',
+                        default='/criteo_data/model_ensemble_0.6/',
                         help='Path to output ensemble')
     parser.add_argument('--max_batch_size',
                         type=int,
