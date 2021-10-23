@@ -118,6 +118,8 @@ def main(args):
 
     repeat_dataset = False if args.num_epochs > 0 else True
     model_dir, snapshot_dir = set_job_dirs()
+    num_gpus = len(args.gpus)
+    batch_size = num_gpus * args.per_gpu_batch_size if args.num_gpus  else args.per_gpu_batch_size 
     
     model = create_model(train_data=[args.train_data],
                          valid_data=args.valid_data,
@@ -127,7 +129,7 @@ def main(args):
                          num_sparse_features=args.num_sparse_features,
                          num_workers=args.num_workers,
                          slot_size_array=args.slot_size_array,
-                         batchsize=args.batchsize,
+                         batchsize=batch_size,
                          lr=args.lr,
                          gpus=args.gpus,
                          repeat_dataset=repeat_dataset)
@@ -220,11 +222,11 @@ def parse_args():
                         default=1,
                         help='Number of training epochs')
     parser.add_argument('-b',
-                        '--batchsize',
+                        '--per_gpu_batch_size',
                         type=int,
                         required=False,
-                        default=16384,
-                        help='Batch size')
+                        default=2048,
+                        help='Per GPU Batch size')
     parser.add_argument('-s',
                         '--snapshot_interval',
                         type=int,
