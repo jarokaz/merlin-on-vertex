@@ -25,6 +25,7 @@ import hugectr
 
 from hugectr.inference import InferenceParams, CreateInferenceSession
 from trainer.model import create_model
+from trainer import utils
 
 MODEL_PREFIX = 'deepfm'
 SNAPSHOT_DIR = 'snapshots'
@@ -179,6 +180,10 @@ def parse_args():
                         type=str,
                         required=True,
                         help='Path to validation data _file_list.txt')
+    parser.add_argument('--schema',
+                        type=str,
+                        required=True,
+                        help='Path to the schema.pbtxt file')
     parser.add_argument('--dropout_rate',
                         type=float,
                         required=False,
@@ -199,7 +204,6 @@ def parse_args():
                         required=False,
                         default=0.001,
                         help='Learning rate')
-    
     parser.add_argument('-i',
                         '--max_iter',
                         type=int,
@@ -249,10 +253,6 @@ def parse_args():
                         required=False,
                         default=100,
                         help='Display progress after given number of iterations')
-    parser.add_argument('--slot_size_array',
-                        type=str,
-                        required=True,
-                        help='Categorical variables cardinalities')
     parser.add_argument('--workspace_size_per_gpu',
                         type=int,
                         required=False,
@@ -271,10 +271,18 @@ def parse_args():
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO, datefmt='%d-%m-%y %H:%M:%S')
-
+    
     args = parse_args()
+    
+    logging.info('Extracting cardinalities from schema...')
+    cardinalities = utils.retrieve_cardinalities(args.schema)
+    logging.info('Cardinalities are extracted.')
+    
+    slot_size_array = [int(cardinality) for cardinality in cardinalities.values()]
+
+   
     args.gpus = json.loads(args.gpus)
-    args.slot_size_array = json.loads(args.slot_size_array)
+    args.slot_size_array = json.loads(slot_size_array)
 
     logging.info(f"Args: {args}")
     start_time = time.time()

@@ -302,48 +302,10 @@ def export_parquet_from_bq_op(
     logging.info('Finished exporting to GCS.')
     
     
-    
-@dsl.component(
-    base_image=config.NVT_IMAGE_URI
-)
-def parse_data_schema_op(
-    transformed_dataset: Input[Dataset],
-    schema_info: Output[Artifact]
-):
-    '''
-    Parses the schema.pbtxt file produced in the preprocessing phase
-    to extract the cardinalities of the categorical features.
-    '''
-    
-    import json
-    from training import utils
-    
-    schema_path = os.path.join(
-        transformed_dataset.path,
-        'schema.pbtxt'
-    )
-    
-    schema_path_fuse = schema_path.replace('gs://', '/gcs/')
-    logging.info('Extracting cardinalities from schema...')
-    cardinalities = utils.retrieve_cardinalities(schema_path_fuse)
-    logging.info('Cardinalities are extracted.')
-    
-    slot_size_array = [int(cardinality) for cardinality in cardinalities.values()]
-    schema_info_dict = dict()
-    schema_info_dict['slot_size_array'] = slot_size_array
-    
-    logging.info('Saving cardinalities as json file...')
-    output_path_fuse = schema_info.path.replace('gs://', '/gcs/')
-    with open('schema_info.dat', 'w') as output_path_fuse:
-        json.dump(slot_size_array, output_path_fuse)
-    logging.info('Cardinalities json file is saved.')
-    
-    
 @dsl.component
 def train_hugectr_op(
     transformed_train_dataset: Input[Dataset],
     transformed_valid_dataset: Input[Dataset],
-    schema_info: Input[Artifact],
     model: Output[Model],
     project: str,
     region: str,
@@ -369,23 +331,20 @@ def train_hugectr_op(
     
     import logging
     from google.cloud import aiplatform as vertex_ai
-    import json
-    
+
     vertex_ai.init(
         project=project,
         location=region
     )
     
-    with open(schema_info.path) as json_file:
-        schem_info_dict = json.load(json_file)
-        
-    slot_size_array = json.dumps(schem_info_dict['slot_size_array'])
-    gpus = json.dumps([list(range(accelerator_count))]).replace(' ','')
-    
-    train_data_fuse = os.paht.join(
+    train_data_fuse = os.path.join(
         transformed_train_dataset.path, '_file_list.txt').replace("gs://", "/gcs/")
-    valid_data_fuse = os.paht.join(
+    valid_data_fuse = os.path.join(
         transformed_valid_dataset.path, '_file_list.txt').replace("gs://", "/gcs/")
+    schema_path = os.path.join(
+        transformed_train_dataset.path, "schema.pbtxt").replace("gs://", "/gcs/")
+    
+    gpus = json.dumps([list(range(accelerator_count))]).replace(' ','')
                  
     worker_pool_specs =  [
         {
@@ -402,7 +361,7 @@ def train_hugectr_op(
                     f'--per_gpu_batch_size={per_gpu_batch_size}',
                     f'--train_data={train_data_fuse}', 
                     f'--valid_data={valid_data_fuse}',
-                    f'--slot_size_array={slot_size_array}',
+                    f'--schema={schema_path}',
                     f'--max_iter={max_iter}',
                     f'--max_eval_batches={max_eval_batches}',
                     f'--eval_batches={eval_batches}',

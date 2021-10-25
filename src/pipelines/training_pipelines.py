@@ -105,13 +105,6 @@ def training_bq(
     transform_valid_dataset.set_gpu_limit(config.GPU_LIMIT)
     transform_valid_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
     
-    # ==================== Parse Schema ===============================
-    
-    parse_data_schema = components.parse_data_schema_op(
-        parquet_dataset=transform_train_dataset.outputs['output_dataset']
-    )
-    
-    
     # ==================== Train HugeCTR model ========================
     
     
@@ -167,7 +160,6 @@ def training_bq(
     train_hugectr = components.train_hugectr_op(
         transformed_train_dataset=transform_train_dataset.outputs['output_dataset'],
         transformed_valid_dataset=transform_valid_dataset.outputs['output_dataset'],
-        schema_info=parse_data_schema.outputs['schema_info'],
         project=config.PROJECT,
         region=config.REGION,
         service_account=config.VERTEX_SA,
@@ -196,7 +188,6 @@ def training_bq(
         workflow=analyze_dataset.outputs['workflow'],
     )
     
-
     # ==================== Upload to Vertex Models ======================
     
     
