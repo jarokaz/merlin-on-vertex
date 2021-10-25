@@ -34,14 +34,14 @@ docker run -it --rm --gpus all --cap-add SYS_NICE \
 --network host \
 -v /home/jupyter/merlin-on-vertex/src/:/src \
 -v /home/jupyter/data:/criteo_data \
+-v /home/jupyter/data/models:/models \
 -w /src \
 nvcr.io/nvidia/merlin/merlin-inference:0.6
 ```
 
 Start triton
 ```
-tritonserver --model-repository=/criteo_data/model_ensemble_0.6 \
---backend-config=hugectr,ps=/criteo_data/model_ensemble_0.6/deepfm/ps.json 
+tritonserver --model-repository=/models \
+--backend-config=hugectr,ps=/models/ps.json 
 ```
-
 

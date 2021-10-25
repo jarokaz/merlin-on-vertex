@@ -118,19 +118,25 @@ def main():
 
     triton_client.is_server_live()
     
-    payload = prepare_inference_request(_examples, binary_extension=True)
+    #payload = prepare_inference_request(_examples, binary_extension=True)
+    #inputs = payload
     
     
+    #return
     
-    print(payload)
-    
-    return
-    #print('*** Invoking prediction')
-    #outputs = [httpclient.InferRequestedOutput("OUTPUT0")]
+    inputs = []
+    for col_name, values in _examples.items():
+        d = np.array(values, dtype=np.int32)
+        d = d.reshape(len(d), 1)
+        inputs.append(httpclient.InferInput(col_name, d.shape, np_to_triton_dtype(np.int32)))
+        
+        inputs[len(inputs)-1].set_data_from_numpy(d)
+    print('*** Invoking prediction')
+    outputs = [httpclient.InferRequestedOutput("OUTPUT0")]
 
-    #response = triton_client.infer("deepfm_ens", inputs, request_id="1", outputs=outputs)
+    response = triton_client.infer("deepfm_ens", inputs, request_id="1", outputs=outputs)
 
-    #print("predicted sigmoid result:\n", response.as_numpy("OUTPUT0"))
+    print("predicted sigmoid result:\n", response.as_numpy("OUTPUT0"))
     
 
 if __name__ == '__main__':
