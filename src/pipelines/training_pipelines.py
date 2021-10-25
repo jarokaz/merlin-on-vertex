@@ -27,12 +27,9 @@ from google_cloud_pipeline_components import experimental as gcp_experimental_co
 
 GKE_ACCELERATOR_KEY = 'cloud.google.com/gke-accelerator'
 
-@component
-def print_op():
-    print("Vertex AI Custom Job Task")
-
 @dsl.pipeline(
-    name=config.TRAINING_PIPELINE_NAME
+    name=config.TRAINING_PIPELINE_NAME,
+    pipeline_root=config.TRAINING_PIPELINE_ROOT
 )
 def training_bq(
     shuffle: str,
@@ -57,7 +54,6 @@ def training_bq(
         bq_location=config.BQ_LOCATION,
         bq_table_name=config.BQ_TRAIN_TABLE_NAME,
         split='train',
-        output_dir=config.PARQUET_OUTPUT_DIR,
     )
     export_train_from_bq.set_cpu_limit(config.CPU_LIMIT)
     export_train_from_bq.set_memory_limit(config.MEMORY_LIMIT)
@@ -69,7 +65,6 @@ def training_bq(
         bq_location=config.BQ_LOCATION,
         bq_table_name=config.BQ_TRAIN_TABLE_NAME,
         split='valid',
-        output_dir=config.PARQUET_OUTPUT_DIR,
     )
     export_valid_from_bq.set_cpu_limit(config.CPU_LIMIT)
     export_valid_from_bq.set_memory_limit(config.MEMORY_LIMIT)
@@ -79,7 +74,6 @@ def training_bq(
     # === Analyze train data split
     analyze_dataset = components.analyze_dataset_op(
         parquet_dataset=export_train_from_bq.outputs['output_dataset'],
-        workflow_path=workflow_path,
         n_workers=int(config.GPU_LIMIT)
     )
     analyze_dataset.set_cpu_limit(config.CPU_LIMIT)
@@ -93,7 +87,6 @@ def training_bq(
     transform_train_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         parquet_dataset=export_train_from_bq.outputs['output_dataset'],
-        transformed_output_dir=transformed_output_dir,
         n_workers=int(config.GPU_LIMIT)
     )
     transform_train_dataset.set_cpu_limit(config.CPU_LIMIT)
@@ -105,14 +98,12 @@ def training_bq(
     transform_valid_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         parquet_dataset=export_valid_from_bq.outputs['output_dataset'],
-        transformed_output_dir=transformed_output_dir,
         n_workers=int(config.GPU_LIMIT)
     )
     transform_valid_dataset.set_cpu_limit(config.CPU_LIMIT)
     transform_valid_dataset.set_memory_limit(config.MEMORY_LIMIT)
     transform_valid_dataset.set_gpu_limit(config.GPU_LIMIT)
     transform_valid_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
-    
     
     # ==================== Parse Schema ===============================
     
@@ -174,9 +165,12 @@ def training_bq(
 
 
     train_hugectr = components.train_hugectr_op(
-        train_parquet_dataset=transform_train_dataset.outputs['output_dataset'],
-        valid_parquet_dataset=transform_valid_dataset.outputs['output_dataset'],
-        cadinalities=parse_data_schema.outputs['candinalities'],
+        transformed_train_dataset=transform_train_dataset.outputs['output_dataset'],
+        transformed_valid_dataset=transform_valid_dataset.outputs['output_dataset'],
+        schema_info=parse_data_schema.outputs['schema_info'],
+        project=config.PROJECT,
+        region=config.REGION,
+        service_account=config.VERTEX_SA,
         job_display_name=f'train-{MODEL_DISPLAY_NAME}',
         replica_count=int(config.REPLICA_COUNT),
         machine_type=config.MACHINE_TYPE,
@@ -195,16 +189,11 @@ def training_bq(
         display_interval=display_interval
     )
 
-
-    # ==================== Evaluate Model ===============================
-    
-    
     # ==================== Export Triton Model ==========================
     
     triton_ensemble = components.export_triton_ensemble(
         model=train_hugectr.outputs['model'],
         workflow=analyze_dataset.outputs['workflow'],
-        export_location=config.EXPORTED_MODEL_DIR
     )
     
 
@@ -222,6 +211,7 @@ def training_bq(
     
     upload_model = components.upload_vertex_model(
         project=config.PROJECT_ID,
+        region=config.REGION,
         display_name=config.MODEL_DISPLAY_NAME,
         exported_model=triton_ensemble.outputs['exported_model'],  
         serving_container_image_uri=config.TRITON_IMAGE_URI,

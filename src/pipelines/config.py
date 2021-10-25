@@ -19,25 +19,11 @@ import os
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "us-central1")
 BUCKET = os.getenv("BUCKET", "")
+VERTEX_SA = os.getenv("VERTEX_SA", f'vertex-sa@{PROJECT}.iam.gserviceaccount.com')
 
 VERSION = "v01"
 MODEL_DISPLAY_NAME = os.getenv("MODEL_DISPLAY_NAME", f"criteo-merlin-recommender-{VERSION}")
 WORKSPACE = os.getenv("WORKSPACE", f'gs://{BUCKET}/{MODEL_DISPLAY_NAME}')
-EXPORTED_MODEL_DIR = os.getenv("EXPORTED_MODEL_DIR", os.path.join(WORKSPACE, 'EXPORTED_MODEL_DIR')
-
-WORKFLOW_PATH = os.getenv(
-    "WORKFLOW_PATH", 
-    os.path.join(WORKSPACE, 'workflow')
-) # Location of the workflow artifact.
-PARQUET_OUTPUT_DIR = os.getenv(
-    "PARQUET_OUTPUT_DIR", 
-    os.path.join(WORKSPACE, 'parquet_raw_data')
-) # Location of the converted Parquet data files.
-TRANSFORMED_OUTPUT_DIR = os.getenv(
-    "TRANSFORMED_OUTPUT_DIR",
-    os.path.join(WORKSPACE, 'transformed_data')
-) # Location of the transformed data files.
-
 
 BQ_DATASET_NAME = os.getenv("BQ_DATASET_NAME", "criteo")
 BQ_LOCATION = os.getenv("BQ_LOCATION", "US")
@@ -45,8 +31,17 @@ BQ_TRAIN_TABLE_NAME = os.getenv("BQ_TRAIN_TABLE_NAME", "train")
 BQ_VALID_TABLE_NAME = os.getenv("BQ_VALID_TABLE_NAME", "valid")
 
 PREPROCESS_CSV_PIPELINE_NAME = os.getenv("PREPROCESS_CSV_PIPELINE_NAME", "nvt-csv-pipeline")
+PREPROCESS_CSV_PIPELINE_ROOT = os.getenv(
+    "PREPROCESS_CSV_PIPELINE_NAME", os.path.join(WORKSPACE, PREPROCESS_CSV_PIPELINE_NAME))
+                               
+                               
 PREPROCESS_BQ_PIPELINE_NAME = os.getenv("PREPROCESS_BQ_PIPELINE_NAME", "nvt-bq-pipeline")
+PREPROCESS_BQ_PIPELINE_ROOT = os.getenv(
+    "PREPROCESS_BQ_PIPELINE_ROOT", os.path.join(WORKSPACE, PREPROCESS_BQ_PIPELINE_NAME))
+                               
 TRAINING_PIPELINE_NAME = os.getenv("TRAINING_PIPELINE_NAME", "merlin-e2e-pipeline")
+TRAINING_PIPELINE_ROOT = os.getenv(
+    "TRAINING_PIPELINE_ROOT", os.path.join(WORKSPACE, TRAINING_PIPELINE_NAME))
 
 NVT_IMAGE_URI = os.getenv("NVT_IMAGE_URI",  f"gcr.io/{PROJECT_ID}/nvt_preprocessing")
 HUGECTR_IMAGE_URI = os.getenv("HUGECTR_IMAGE_URI",  f"gcr.io/{PROJECT_ID}/hugectr_training")
