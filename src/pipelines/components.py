@@ -70,11 +70,12 @@ def convert_csv_to_parquet_op(
     import logging
     import os
     from preprocessing import etl
+    import feature_utils
 
     logging.basicConfig(level=logging.INFO)
 
     logging.info('Getting column names and dtypes')
-    col_dtypes = etl.get_criteo_col_dtypes()
+    col_dtypes = feature_utils.get_criteo_col_dtypes()
 
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
@@ -397,8 +398,9 @@ def train_hugectr_op(
     logging.info("Custom Vertex AI job completed.")
 
 
-## needs tritonclient https://pypi.org/project/tritonclient/
-@dsl.component   
+@dsl.component(
+    base_image=config.NVT_IMAGE_URI
+)  
 def export_triton_ensemble(
     model: Input[Model],
     workflow: Input[Artifact],
@@ -406,7 +408,8 @@ def export_triton_ensemble(
 ):
   
     import logging
-    from inference import prediction
+    from serving import export
+    import feature_utils
     
     model_location_fuse = model.path.replace("gs://", "/gcs/")
     workflow_location_fuse =  workflow.path.replace("gs://", "/gcs/")
@@ -418,11 +421,18 @@ def export_triton_ensemble(
         workflow_location=model_location_fuse,
         output_location=output_dir_fuse
     )
+    
+    export.export_ensemble(
+        workflow_path=workflow_location_fuse,
+        saved_model_path=model_location_fuse,
+        output_path=output_location_fuse,
+        categotical_columns=feature_utils.categotical_columns(),
+        continuous_columns=feature_utils.continuous_columns(),
+        label_columns=feature_utils.label_columns()
+    )
     logging.info('Triton model exported.')
     
     
-    
-@dsl.component   
 def upload_vertex_model(
     exported_model: Input[Artifact],
     uploaded_model: Output[Artifact],
