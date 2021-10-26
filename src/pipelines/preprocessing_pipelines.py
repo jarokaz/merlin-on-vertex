@@ -20,7 +20,8 @@ from . import config
 GKE_ACCELERATOR_KEY = 'cloud.google.com/gke-accelerator'
 
 @dsl.pipeline(
-    name=config.PREPROCESS_CSV_PIPELINE_NAME
+    name=config.PREPROCESS_CSV_PIPELINE_NAME,
+    pipeline_root=config.PREPROCESS_CSV_PIPELINE_ROOT
 )
 def preprocessing_csv(
     train_paths: list,
@@ -100,7 +101,8 @@ def preprocessing_csv(
 
 
 @dsl.pipeline(
-    name=config.PREPROCESS_BQ_PIPELINE_NAME
+    name=config.PREPROCESS_BQ_PIPELINE_NAME,
+    pipeline_root=config.PREPROCESS_BQ_PIPELINE_ROOT
 )
 def preprocessing_bq(
     bq_project: str,

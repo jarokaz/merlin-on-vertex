@@ -35,7 +35,6 @@ def convert_csv_to_parquet_op(
     output_dataset: Output[Dataset],
     data_paths: list,
     split: str,
-    output_dir: str,
     sep: str,
     n_workers: int,
     shuffle: Optional[str] = None,
@@ -47,31 +46,17 @@ def convert_csv_to_parquet_op(
     '''
     Component to convert CSV file(s) to Parquet format using NVTabular.
 
-    output_datasets: Output[Dataset]
+    output_dataset: Output[Dataset]
         Output metadata with references to the converted CSVs in GCS.
         Usage:
-            output_datasets.metadata['train']
-                .example: 'gs://my_bucket/folders/train'
-            output_datasets.metadata['valid']
-                .example: 'gs://my_bucket/folders/valid'
-    train_paths: list
+            output_dataset.path
+    data_paths: list
         List of paths to folders or files in GCS for training.
         For recursive folder search, set the recursive variable to True
         Format:
             'gs://<bucket_name>/<subfolder1>/<subfolder>/' or
             'gs://<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or
             a combination of both.
-    valid_paths: list
-        List of paths to folders or files in GCS for validation.
-        For recursive folder search, set the recursive variable to True
-        Format:
-            'gs://<bucket_name>/<subfolder1>/<subfolder>/' or
-            'gs://<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or
-            a combination of both.
-    output_dir: str
-        Path in GCS to write the converted parquet files.
-        Format:
-            'gs://<bucket_name>/<subfolder1>/<subfolder>'
     recursive: bool
         If it must recursivelly look for files in path.
     shuffle: str
@@ -81,11 +66,9 @@ def convert_csv_to_parquet_op(
             PER_WORKER
             FULL
     '''
-    # Standard Libraries
+    
     import logging
     import os
-
-    # ETL library
     from preprocessing import etl
 
     logging.basicConfig(level=logging.INFO)
@@ -112,14 +95,13 @@ def convert_csv_to_parquet_op(
     )
 
     fuse_output_dir = os.path.join(
-        output_dir.replace('gs://', '/gcs/'), split
+        output_dataset.path.replace('gs://', '/gcs/'), split
     )
     
     logging.info(f'Writing parquet file(s) to {fuse_output_dir}')
     etl.convert_csv_to_parquet(fuse_output_dir, dataset, shuffle)
 
-    # Write output path to metadata
-    output_dataset.metadata['dataset_path'] = os.path.join(output_dir, split)
+    # Write metadata
     output_dataset.metadata['split'] = split
 
 
@@ -129,7 +111,6 @@ def convert_csv_to_parquet_op(
 def analyze_dataset_op(
     parquet_dataset: Input[Dataset],
     workflow: Output[Artifact],
-    workflow_path: str,
     n_workers: int,
     device_limit_frac: Optional[float] = 0.8,
     device_pool_frac: Optional[float] = 0.9,
@@ -138,26 +119,12 @@ def analyze_dataset_op(
     '''
     Component to generate statistics from the dataset.
 
-    datasets: Input[Dataset]
+    parquet_dataset: Input[Dataset]
         Input metadata with references to the train and valid converted
         datasets in GCS.
-        Usage:
-            full_path_train = datasets.metadata.get('train')
-                .example: 'gs://my_bucket/folders/converted/train'
-            full_path_valid = datasets.metadata.get('valid')
-                .example: 'gs://my_bucket/folders/converted/valid'
     workflow: Output[Artifact]
         Output metadata with the path to the fitted workflow artifacts
         (statistics) and converted datasets in GCS.
-        Usage:
-            workflow.metadata['workflow']
-                .example: '/gcs/my_bucket/fitted_workflow'
-            workflow.metadata['datasets']
-                .example: 'gs://my_bucket/folders/converted/train'
-    workflow_path: str
-        Path to write the fitted workflow.
-        Format:
-            '<bucket_name>/<subfolder1>/<subfolder>'
     split_name: str
         Which dataset split to calculate the statistics. 'train' or 'valid'
     '''
@@ -184,7 +151,7 @@ def analyze_dataset_op(
     logging.info(f'Creating dataset to be analysed.')
     dataset = etl.create_parquet_dataset(
         client=client,
-        data_path=parquet_dataset.metadata['dataset_path'],
+        data_path=parquet_dataset.path,
         part_mem_frac=part_mem_frac
     )
 
@@ -194,11 +161,9 @@ def analyze_dataset_op(
     criteo_workflow = etl.analyze_dataset(criteo_workflow, dataset)
     logging.info('Finished generating statistics for dataset.')
 
-    workflow_path_fuse = workflow_path.replace('gs://', '/gcs/')
+    workflow_path_fuse = workflow.path.replace('gs://', '/gcs/')
     etl.save_workflow(criteo_workflow, workflow_path_fuse)
     logging.info('Workflow saved to GCS')
-
-    workflow.metadata['workflow'] = workflow_path_fuse
 
 
 @dsl.component(
@@ -208,7 +173,6 @@ def transform_dataset_op(
     workflow: Input[Artifact],
     parquet_dataset: Input[Dataset],
     transformed_dataset: Output[Dataset],
-    transformed_output_dir: str,
     n_workers: int,
     shuffle: str = None,
     device_limit_frac: float = 0.8,
@@ -221,23 +185,9 @@ def transform_dataset_op(
     workflow: Input[Artifact]
         Input metadata with the path to the fitted_workflow and the 
         location of the converted datasets in GCS (train and validation).
-        Usage:
-            fitted_workflow.metadata['datasets']['train']
-                example: 'gs://my_bucket/converted/train'
-            fitted_workflow.metadata['fitted_workflow']
-                example: '/gcs/my_bucket/fitted_workflow'
     transformed_dataset: Output[Dataset]
         Output metadata with the path to the transformed dataset 
         and the validation dataset.
-        Usage:
-            transformed_dataset.metadata['transformed_dataset']
-                .example: 'gs://my_bucket/transformed_data/train'
-            transformed_dataset.metadata['original_datasets']
-                .example: 'gs://my_bucket/converted/train'
-    transformed_output_dir: str,
-        Path in GCS to write the transformed parquet files.
-        Format:
-            'gs://<bucket_name>/<subfolder1>/<subfolder>/'
     '''
     from preprocessing import etl
     import logging
@@ -252,10 +202,12 @@ def transform_dataset_op(
         device_limit_frac=device_limit_frac, 
         device_pool_frac=device_pool_frac
     )
+    
+    workflow_fuse_path = workflow.path.replace("gs://", "/gcs/")
 
     logging.info('Loading workflow and statistics')
     criteo_workflow = etl.load_workflow(
-        workflow_path=workflow.metadata['workflow'],
+        workflow_path=workflow_fuse_path,
         client=client
     )
 
@@ -264,7 +216,7 @@ def transform_dataset_op(
     logging.info(f'Creating dataset definition for {split} split')
     dataset = etl.create_parquet_dataset(
         client=client,
-        data_path=parquet_dataset.metadata['dataset_path'],
+        data_path=parquet_dataset.path,
         part_mem_frac=part_mem_frac
     )
 
@@ -277,16 +229,13 @@ def transform_dataset_op(
 
     # Define output path for transformed files
     transformed_fuse_dir = os.path.join(
-        transformed_output_dir.replace('gs://', '/gcs/'), 
+        transformed_dataset.path.replace('gs://', '/gcs/'), 
         split
     )
 
     logging.info('Applying transformation')
     etl.save_dataset(dataset, transformed_fuse_dir)
 
-    transformed_dataset.metadata['dataset_path'] = os.path.join(
-        transformed_output_dir, split
-    )
     transformed_dataset.metadata['split'] = split
 
 
@@ -300,20 +249,12 @@ def export_parquet_from_bq_op(
     bq_dataset_name: str,
     bq_table_name: str,
     split: str,
-    output_dir: str
 ):
     '''
     Component to export PARQUET files from a bigquery table.
 
     output_datasets: dict
         Output metadata with the GCS path for the exported datasets.
-        Usage:
-            output_datasets.metadata['train']
-                .example: 'gs://bucket_name/subfolder/train/'
-    output_dir: str
-        Path to write the exported parquet files.
-        Format:
-            'gs://<bucket_name>/<subfolder1>/<subfolder>/'
     bq_project: str
         GCP project id
         Format:
@@ -342,7 +283,7 @@ def export_parquet_from_bq_op(
     client = bigquery.Client(project=bq_project)
     dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_name)
 
-    full_output_path = os.path.join(output_dir, split)
+    full_output_path = os.path.join(output_dataset.path, split)
     
     logging.info(
         f'Extracting {bq_table_name} table to {full_output_path} path.'
@@ -355,8 +296,167 @@ def export_parquet_from_bq_op(
         location=bq_location
     )
 
-    # Write output path to metadata
-    output_dataset.metadata['dataset_path'] = os.path.join(output_dir, split)
+    # Write metadata
     output_dataset.metadata['split'] = split
 
     logging.info('Finished exporting to GCS.')
+    
+    
+@dsl.component
+def train_hugectr_op(
+    transformed_train_dataset: Input[Dataset],
+    transformed_valid_dataset: Input[Dataset],
+    model: Output[Model],
+    project: str,
+    region: str,
+    service_account: str,
+    job_display_name: str,
+    training_image_url: str,
+    replica_count: int,
+    machine_type: str,
+    accelerator_type: str,
+    accelerator_count: int,
+    num_workers: int,
+    per_gpu_batch_size: int,
+    max_iter: int,
+    max_eval_batches: int,
+    eval_batches: int,
+    dropout_rate: int,
+    lr: int ,
+    num_epochs: int,
+    eval_interva: int,
+    snapshot: int,
+    display_interval: int
+):
+    
+    import logging
+    from google.cloud import aiplatform as vertex_ai
+
+    vertex_ai.init(
+        project=project,
+        location=region
+    )
+    
+    train_data_fuse = os.path.join(
+        transformed_train_dataset.path, '_file_list.txt').replace("gs://", "/gcs/")
+    valid_data_fuse = os.path.join(
+        transformed_valid_dataset.path, '_file_list.txt').replace("gs://", "/gcs/")
+    schema_path = os.path.join(
+        transformed_train_dataset.path, "schema.pbtxt").replace("gs://", "/gcs/")
+    
+    gpus = json.dumps([list(range(accelerator_count))]).replace(' ','')
+                 
+    worker_pool_specs =  [
+        {
+            "machine_spec": {
+                "machine_type": machine_type,
+                "accelerator_type": accelerator_type,
+                "accelerator_count": accelerator_count,
+            },
+            "replica_count": 1,
+            "container_spec": {
+                "image_uri": training_image_url,
+                "command": ["python", "-m", "trainer.task"],
+                "args": [
+                    f'--per_gpu_batch_size={per_gpu_batch_size}',
+                    f'--train_data={train_data_fuse}', 
+                    f'--valid_data={valid_data_fuse}',
+                    f'--schema={schema_path}',
+                    f'--max_iter={max_iter}',
+                    f'--max_eval_batches={max_eval_batches}',
+                    f'--eval_batches={eval_batches}',
+                    f'--dropout_rate={dropout_rate}',
+                    f'--lr={lr}',
+                    f'--num_workers={num_workers}',
+                    f'--num_epochs={num_epochs}',
+                    f'--eval_interval={eval_interval}',
+                    f'--snapshot={snapshot}',
+                    f'--display_interval={display_interval}',
+                    f'--gpus={gpus}',
+                ],
+            },
+        }
+    ]
+    
+    logging.info('worker_pool_specs:')
+    logging.info(worker_pool_specs)
+    
+    logging.info("Submitting a custom job to Vertex AI...")
+    job = vertex_ai.CustomJob(
+        display_name=job_name,
+        worker_pool_specs=worker_pool_specs,
+        base_output_dir=model.path
+    )
+    
+    job.run(
+        sync=True,
+        service_account=service_account,
+        restart_job_on_worker_restart=False
+    )
+    
+    logging.info("Custom Vertex AI job completed.")
+
+
+## needs tritonclient https://pypi.org/project/tritonclient/
+@dsl.component   
+def export_triton_ensemble(
+    model: Input[Model],
+    workflow: Input[Artifact],
+    exported_model: Output[Model]
+):
+  
+    import logging
+    from inference import prediction
+    
+    model_location_fuse = model.path.replace("gs://", "/gcs/")
+    workflow_location_fuse =  workflow.path.replace("gs://", "/gcs/")
+    output_location_fuse = exported_model.path.replace("gs://", "/gcs/")
+    
+    logging.info('Exporting Triton ensemble model...')
+    prediction.export_triton_ensemble(
+        model_location=model_location_fuse,
+        workflow_location=model_location_fuse,
+        output_location=output_dir_fuse
+    )
+    logging.info('Triton model exported.')
+    
+    
+    
+@dsl.component   
+def upload_vertex_model(
+    exported_model: Input[Artifact],
+    uploaded_model: Output[Artifact],
+    project: str,
+    region: str,
+    display_name: str,
+    serving_container_image_uri: str,
+    serving_container_environment_variables: dict,
+    labels: dict
+):
+    
+    import logging
+    from google.cloud import aiplatform as vertex_ai
+    
+    vertex_ai.init(project=project, location=region)
+    
+    exported_model_path = exported_model.path
+    
+    logging.info(f"Exported model location: {exported_model_path}")
+
+    vertex_model = vertex_ai.Model.upload(
+        display_name=display_name,
+        artifact_uri=exported_model_path,
+        serving_container_image_uri=serving_container_image_uri,
+        labels=labels
+    )
+
+    model_uri = vertex_model.gca_resource.name
+    logging.info(f"Model uploaded to Vertex AI: {model_uri}")
+    uploaded_model.set_string_custom_property("model_uri", model_uri)
+    
+    
+    
+    
+    
+    
+    
