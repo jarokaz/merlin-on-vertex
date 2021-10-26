@@ -416,12 +416,6 @@ def export_triton_ensemble(
     output_location_fuse = exported_model.path.replace("gs://", "/gcs/")
     
     logging.info('Exporting Triton ensemble model...')
-    prediction.export_triton_ensemble(
-        model_location=model_location_fuse,
-        workflow_location=model_location_fuse,
-        output_location=output_dir_fuse
-    )
-    
     export.export_ensemble(
         workflow_path=workflow_location_fuse,
         saved_model_path=model_location_fuse,
