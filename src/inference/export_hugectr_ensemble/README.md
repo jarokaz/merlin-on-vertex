@@ -42,10 +42,13 @@ gcr.io/jk-mlops-dev/merlin-inference:latest
 
 
 ```
+docker build -t gcr.io/jk-mlops-dev/merlin-inference:latest -f Dockerfile.triton .
+docker push gcr.io/jk-mlops-dev/merlin-inference:latest
+```
+
+```
 docker run -it --rm --gpus all --cap-add SYS_NICE \
 --network host \
--v /home/jupyter/merlin-on-vertex/src/:/src \
--w /src \
 -e AIP_STORAGE_URI='gs://jk-criteo-bucket/models' \
 gcr.io/jk-mlops-dev/merlin-inference:latest
 ```

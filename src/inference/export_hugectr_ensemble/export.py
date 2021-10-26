@@ -109,21 +109,11 @@ def parse_args():
                         required=False,
                         default='/criteo_data/model_21.09',
                         help='Path to a saved model')
-    #parser.add_argument('--model_graph_path',
-    #                    type=str,
-    #                    required=False,
-    #                    default='/criteo_data/model_21.09/graph/deepfm.json',
-    #                    help='Path to model graph')
     parser.add_argument('--model_registry_path',
                         type=str,
                         required=False,
                         default='/models',
                         help='A root path to registry embedd in hugectr model config.pbtxt and ps.json')
-    #parser.add_argument('--model_params_path',
-    #                    type=str,
-    #                    required=False,
-    #                    default='/criteo_data/model_21.09/parameters',
-    #                    help='Path to model parameters')
     parser.add_argument('--output_path',
                         type=str,
                         required=False,

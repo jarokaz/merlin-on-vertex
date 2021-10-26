@@ -39,10 +39,15 @@ if [ -z "$1" ]
   else
     MODEL_REPOSITORY=$1
 fi
+
     
 echo "Copying model ensemble from ${AIP_STORAGE_URI} to ${MODEL_REPOSITORY}"
-mkdir ${MODEL_REPOSITORY}
+mkdir ${MODEL_REPOSITORY} 
 gsutil -m cp -r ${AIP_STORAGE_URI}/* ${MODEL_REPOSITORY}
+
+# gsutil does not copy empty dirs so create a version folder for the ensemble
+ENSEMBLE_DIR=$(ls ${MODEL_REPOSITORY} | grep ens)
+mkdir ${MODEL_REPOSITORY}/${ENSEMBLE_DIR}/1 
 
 echo "Starting Triton Server"
 tritonserver --model-repository=$MODEL_REPOSITORY \
