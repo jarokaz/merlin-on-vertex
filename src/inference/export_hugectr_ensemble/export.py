@@ -1,6 +1,5 @@
 import argparse
 import copy
-import glob
 import logging
 import os
 import json
@@ -8,6 +7,8 @@ import shutil
 
 import nvtabular as nvt
 from nvtabular.inference.triton import export_hugectr_ensemble
+
+from pathlib import Path
 
 
 NUM_SLOTS = 26
@@ -22,33 +23,28 @@ HUGECTR_CONFIG_FILENAME = "ps.json"
 
 
 def create_hugectr_backend_config(
-    ensemble_root_path,
-    model_registry_path,
-    model_name):
+    model_path,
+    model_registry_path):
     
-    config_dict = dict()
-    network_file = os.path.join(model_registry_path,
-                                model_name,
-                                "1",
-                                f'{model_name}.json')
+    p = Path(model_path)
+    model_version = p.parts[-1]
+    model_name = p.parts[-2]
+    model_path_in_registry = os.path.join(model_registry_path, model_name, model_version)
+    
+    dense_pattern=f'{model_name}_dense_*.model'
+    dense_path = [os.path.join(model_path_in_registry, path.name) 
+                  for path in p.glob(dense_pattern)][0]
+    sparse_pattern=f'{model_name}[0-9]_sparse_*.model'
+    sparse_paths = [os.path.join(model_path_in_registry, path.name) 
+                    for path in p.glob(sparse_pattern)]   
+    network_file = os.path.join(model_path_in_registry, f'{model_name}.json')
 
-    pathname=os.path.join(ensemble_root_path,
-                          model_name,
-                          '1', 
-                          f'{model_name}_dense_*.model')
-    dense_file = glob.glob(pathname)[0]
-    
-    pathname=os.path.join(ensemble_root_path,
-                          model_name,
-                          '1', 
-                          f'{model_name}[0-9]_sparse_*.model')
-    sparse_files = glob.glob(pathname)
-    
+    config_dict = dict()
     config_dict['supportlonglong'] = True
     model_config = dict()
     model_config['model'] = model_name
-    model_config['sparse_files'] = sparse_files
-    model_config['dense_file'] = dense_file
+    model_config['sparse_files'] = sparse_paths
+    model_config['dense_file'] = dense_path
     model_config['network_file'] = network_file
     config_dict['models'] = [model_config]
     
@@ -86,13 +82,12 @@ def export_ensemble(
         label_columns=LABEL_COLUMNS,
         cats=CATEGORICAL_COLUMNS,
         conts=CONTINUOUS_COLUMNS,
-        max_batch_size=max_batch_size,
+       max_batch_size=max_batch_size,
     )
     
     hugectr_backend_config = create_hugectr_backend_config(
-        ensemble_root_path=output_path,
-        model_registry_path=model_registry_path,
-        model_name=model_name_prefix)
+        model_path=os.path.join(output_path, model_name_prefix, '1'),
+        model_registry_path=model_registry_path)
     
     with open(os.path.join(output_path, HUGECTR_CONFIG_FILENAME), 'w') as f:
         json.dump(hugectr_backend_config, f)

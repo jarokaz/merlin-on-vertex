@@ -36,8 +36,21 @@ docker run -it --rm --gpus all --cap-add SYS_NICE \
 -v /home/jupyter/data:/criteo_data \
 -v /home/jupyter/data/models:/models \
 -w /src \
-nvcr.io/nvidia/merlin/merlin-inference:0.6
+-e AIP_STORAGE_URI='gs://jk-criteo-bucket/model_registry' \
+gcr.io/jk-mlops-dev/merlin-inference:latest
 ```
+
+
+```
+docker run -it --rm --gpus all --cap-add SYS_NICE \
+--network host \
+-v /home/jupyter/merlin-on-vertex/src/:/src \
+-w /src \
+-e AIP_STORAGE_URI='gs://jk-criteo-bucket/models' \
+gcr.io/jk-mlops-dev/merlin-inference:latest
+```
+
+
 
 Start triton
 ```
