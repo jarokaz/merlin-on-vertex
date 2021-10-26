@@ -1,0 +1,16 @@
+FROM gcr.io/merlin-on-gcp/dongm-merlin-inference-hugectr:v0.6.1
+
+# expose health and prediction listener ports from the image
+EXPOSE 8000
+EXPOSE 8001
+EXPOSE 8002
+
+# set working directory
+WORKDIR /
+RUN mkdir /model
+
+# copy model files
+COPY /models/ /model/models/
+
+# run Triton inference server (http server) to respond to prediction requests
+CMD ["tritonserver", "--model-repository=/model/models/", "--backend-config=hugectr,ps=/model/models/ps.json"] 
