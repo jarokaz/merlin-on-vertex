@@ -58,11 +58,11 @@ to drive the execution of the of different steps of the system:
 ## Getting started
 ### Setting up Vertex AI environment
 #### Enabling the required services - TBD
-#### Creating an instance of Vertex Workbench managed notebook
+#### Creating and configuring an instance of Vertex Workbench managed notebook
 
-1. In the Cloud Console, go to the **Managed notebooks** tab of the **Vertex AI Workbench** page.
-2. Click <strong><span class="material-icons" aria-hidden="true"  translate="no">add_box</span>New
-notebook</strong>.
+1. Follow the instructions in the [Create a managed notebooks instance how-to guide](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance):
+    1. In the [Use custom Docker images settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-2) enter the following image path: `gcr.io/merlin-on-gcp/dongm-merlin-train-hugectr:latest`
+    2. In the [Configure hardware settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-3) select your GPU configuration. We recommend a machine with two NVIDIA T4 or A100 GPUs. 
 
 ### Setting up code samples
 1. Open the JupyterLab then open a new Terminal
