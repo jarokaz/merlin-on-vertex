@@ -58,6 +58,16 @@ to drive the execution of the of different steps of the system:
 ## Getting started
 ### Setting up Vertex AI environment
 #### Enabling the required services - TBD
+#### Creating Merlin development container image
+From Cloud Shell
+
+1. Get the develoment image Dockerfile
+```
+SRC_REPO=https://github.com/jarokaz/merlin-on-vertex
+LOCAL_DIR=merlin-env-setup
+kpt pkg get $SRC_REPO/env@main $LOCAL_DIR
+```
+
 #### Creating and configuring an instance of Vertex Workbench managed notebook
 
 1. Follow the instructions in the [Create a managed notebooks instance how-to guide](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance):
