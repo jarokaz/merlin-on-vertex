@@ -69,8 +69,9 @@ to drive the execution of the of different steps of the system:
     ```
     git clone https://github.com/GoogleCloudPlatform/merlin-on-gcp.git
     ```
-    cd merlin-on-gcp
+    3. Install the required packages.
     ```
+    cd merlin-on-gcp
     pip install -r requirements.txt
     ```
 
