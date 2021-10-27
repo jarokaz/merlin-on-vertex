@@ -1,6 +1,6 @@
 FROM nvcr.io/nvidia/merlin/merlin-training:21.09
 
-WORKDIR /nvtabular
+WORKDIR /src
 
 RUN pip install -U pip
 
@@ -9,5 +9,6 @@ RUN pip install google-cloud-aiplatform kfp
 
 COPY ./preprocessing ./preprocessing
 COPY setup.py .
+COPY feature_utils.py .
 
 RUN pip install .

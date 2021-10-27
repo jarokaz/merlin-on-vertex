@@ -19,7 +19,7 @@ import os
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "us-central1")
 BUCKET = os.getenv("BUCKET", "")
-VERTEX_SA = os.getenv("VERTEX_SA", f'vertex-sa@{PROJECT}.iam.gserviceaccount.com')
+VERTEX_SA = os.getenv("VERTEX_SA", f'vertex-sa@{PROJECT_ID}.iam.gserviceaccount.com')
 
 VERSION = "v01"
 MODEL_DISPLAY_NAME = os.getenv("MODEL_DISPLAY_NAME", f"criteo-merlin-recommender-{VERSION}")
@@ -32,7 +32,7 @@ BQ_VALID_TABLE_NAME = os.getenv("BQ_VALID_TABLE_NAME", "valid")
 
 PREPROCESS_CSV_PIPELINE_NAME = os.getenv("PREPROCESS_CSV_PIPELINE_NAME", "nvt-csv-pipeline")
 PREPROCESS_CSV_PIPELINE_ROOT = os.getenv(
-    "PREPROCESS_CSV_PIPELINE_NAME", os.path.join(WORKSPACE, PREPROCESS_CSV_PIPELINE_NAME))
+    "PREPROCESS_CSV_PIPELINE_ROOT", os.path.join(WORKSPACE, PREPROCESS_CSV_PIPELINE_NAME))
                                
                                
 PREPROCESS_BQ_PIPELINE_NAME = os.getenv("PREPROCESS_BQ_PIPELINE_NAME", "nvt-bq-pipeline")

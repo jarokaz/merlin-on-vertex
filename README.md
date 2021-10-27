@@ -56,12 +56,21 @@ to drive the execution of the of different steps of the system:
 
 
 ## Getting started
-1. [Setup your Vertex environment](provision) on Google Cloud.
-2. Start your AI Notebook instance (with CUDA Toolkit 11.0 installed and V100 GPUs).
-3. Open the JupyterLab then open a new Terminal
-4. Clone the repository to your AI Notebook instance:
+### Setting up Vertex AI environment
+#### Enabling the required services - TBD
+#### Creating and configuring an instance of Vertex Workbench managed notebook
+
+1. Follow the instructions in the [Create a managed notebooks instance how-to guide](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance):
+    1. In the [Use custom Docker images settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-2) enter the following image path: `gcr.io/merlin-on-gcp/dongm-merlin-train-hugectr:latest`
+    2. In the [Configure hardware settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-3) select your GPU configuration. We recommend a machine with two NVIDIA T4 or A100 GPUs. 
+2. Set up code samples
+    1. Open the JupyterLab then open a new Terminal
+    2. Clone the repository to your AI Notebook instance:
     ```
     git clone https://github.com/GoogleCloudPlatform/merlin-on-gcp.git
+    ```
+    3. Install the required packages.
+    ```
     cd merlin-on-gcp
     pip install -r requirements.txt
     ```
