@@ -72,8 +72,7 @@ cd $LOCAL_DIR
 ```
 PROJECT_ID=merlin-on-gcp
 IMAGE_URI=gcr.io/${PROJECT_ID}/merlin-dev-vertex
-docker build -t ${IMAGE_URI} .
-docker push ${IMAGE_URI}
+gcloud builds submit --timeout "2h" --tag {IMAGE_URI} Dockerfile --machine-type=e2-highcpu-8
 ```
 
 #### Creating and configuring an instance of Vertex Workbench managed notebook
