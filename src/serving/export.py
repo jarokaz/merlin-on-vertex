@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 """Exporting Triton ensemble model."""
 
-import copy
-import logging
 import os
 import json
-import shutil
 
 import nvtabular as nvt
 from nvtabular.inference.triton import export_hugectr_ensemble
