@@ -86,9 +86,5 @@ gcloud builds submit --timeout "2h" --tag ${IMAGE_URI} . --machine-type=e2-highc
     ```
     git clone https://github.com/GoogleCloudPlatform/merlin-on-gcp.git
     ```
-    3. Install the required packages.
-    ```
-    cd merlin-on-gcp
-    pip install -r requirements.txt
-    ```
+    
 
