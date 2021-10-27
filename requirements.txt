@@ -1,4 +1,3 @@
-nvtabular==0.7.0
 google-cloud-aiplatform==1.5
 google-cloud-pipeline-components==0.1.8
 kfp==1.8
