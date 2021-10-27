@@ -29,7 +29,8 @@ from . import config
 
 
 @dsl.component(
-    base_image=config.NVT_IMAGE_URI
+    base_image=config.NVT_IMAGE_URI,
+    install_kfp_package=False
 )
 def convert_csv_to_parquet_op(
     output_dataset: Output[Dataset],
@@ -47,24 +48,32 @@ def convert_csv_to_parquet_op(
     Component to convert CSV file(s) to Parquet format using NVTabular.
 
     output_dataset: Output[Dataset]
-        Output metadata with references to the converted CSVs in GCS.
+        Output metadata with references to the converted CSV files in GCS
+        and the split name.
+        The path to the files are in GCS fuse format:
+            /gcs/<bucket name>/path/to/file
         Usage:
             output_dataset.path
+            output_dataset.metadata['split']
     data_paths: list
-        List of paths to folders or files in GCS for training.
+        List of paths to folders or files on GCS.
         For recursive folder search, set the recursive variable to True
         Format:
             'gs://<bucket_name>/<subfolder1>/<subfolder>/' or
             'gs://<bucket_name>/<subfolder1>/<subfolder>/flat_file.csv' or
             a combination of both.
-    recursive: bool
-        If it must recursivelly look for files in path.
+    split: str
+        Split name of the dataset. Example: train or valid
+    n_workers: int
+        Number of GPUs allocated to convert the CSV to Parquet
     shuffle: str
         How to shuffle the converted CSV, default to None.
         Options:
             PER_PARTITION
             PER_WORKER
             FULL
+    recursive: bool
+        Recursivelly search for files in path.
     '''
     
     import logging
@@ -95,9 +104,8 @@ def convert_csv_to_parquet_op(
         client=client
     )
 
-    fuse_output_dir = os.path.join(
-        output_dataset.path.replace('gs://', '/gcs/'), split
-    )
+    logging.info(f'Base path in {output_dataset.path}')
+    fuse_output_dir = os.path.join(output_dataset.path, split)
     
     logging.info(f'Writing parquet file(s) to {fuse_output_dir}')
     etl.convert_csv_to_parquet(fuse_output_dir, dataset, shuffle)
@@ -107,7 +115,8 @@ def convert_csv_to_parquet_op(
 
 
 @dsl.component(
-    base_image=config.NVT_IMAGE_URI
+    base_image=config.NVT_IMAGE_URI,
+    install_kfp_package=False
 )
 def analyze_dataset_op(
     parquet_dataset: Input[Dataset],
@@ -122,18 +131,29 @@ def analyze_dataset_op(
 
     parquet_dataset: Input[Dataset]
         Input metadata with references to the train and valid converted
-        datasets in GCS.
+        datasets in GCS and the split name.
+        Usage:
+            parquet_dataset.path
+            parquet_dataset.metadata['split']
     workflow: Output[Artifact]
         Output metadata with the path to the fitted workflow artifacts
-        (statistics) and converted datasets in GCS.
-    split_name: str
-        Which dataset split to calculate the statistics. 'train' or 'valid'
+        (statistics).
+    n_workers: int
+        Number of GPUs allocated to do the fitting process
+    shuffle: str
+        How to shuffle the transformed data, default to None.
+        Options:
+            PER_PARTITION
+            PER_WORKER
+            FULL
     '''
     from preprocessing import etl
     import logging
     import os
 
     logging.basicConfig(level=logging.INFO)
+
+    split = parquet_dataset.metadata['split']
 
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
@@ -150,25 +170,27 @@ def analyze_dataset_op(
 
     # Create dataset to be fitted
     logging.info(f'Creating dataset to be analysed.')
+    logging.info(f'Base path in {parquet_dataset.path}')
     dataset = etl.create_parquet_dataset(
         client=client,
-        data_path=parquet_dataset.path,
+        data_path=os.path.join(
+            parquet_dataset.path.replace('/gcs/','gs://'),
+            split
+        ),
         part_mem_frac=part_mem_frac
     )
-
-    split = parquet_dataset.metadata['split']
 
     logging.info(f'Starting workflow fitting for {split} split.')
     criteo_workflow = etl.analyze_dataset(criteo_workflow, dataset)
     logging.info('Finished generating statistics for dataset.')
 
-    workflow_path_fuse = workflow.path.replace('gs://', '/gcs/')
-    etl.save_workflow(criteo_workflow, workflow_path_fuse)
+    etl.save_workflow(criteo_workflow, workflow.path)
     logging.info('Workflow saved to GCS')
 
 
 @dsl.component(
-    base_image=config.NVT_IMAGE_URI
+    base_image=config.NVT_IMAGE_URI,
+    install_kfp_package=False
 )
 def transform_dataset_op(
     workflow: Input[Artifact],
@@ -181,14 +203,16 @@ def transform_dataset_op(
     part_mem_frac: float = 0.125,
 ):
     '''
-    Component to transform a dataset according to the workflow specifications.
+    Component to transform a dataset according to the workflow definitions.
 
     workflow: Input[Artifact]
-        Input metadata with the path to the fitted_workflow and the 
-        location of the converted datasets in GCS (train and validation).
+        Input metadata with the path to the fitted_workflow
+    parquet_dataset: Input[Dataset]
+        Location of the converted dataset in GCS and split name
     transformed_dataset: Output[Dataset]
-        Output metadata with the path to the transformed dataset 
-        and the validation dataset.
+        Split name of the transformed dataset.
+    n_workers: int
+        Number of GPUs allocated to do the transformation
     '''
     from preprocessing import etl
     import logging
@@ -203,12 +227,10 @@ def transform_dataset_op(
         device_limit_frac=device_limit_frac, 
         device_pool_frac=device_pool_frac
     )
-    
-    workflow_fuse_path = workflow.path.replace("gs://", "/gcs/")
 
     logging.info('Loading workflow and statistics')
     criteo_workflow = etl.load_workflow(
-        workflow_path=workflow_fuse_path,
+        workflow_path=workflow.path,
         client=client
     )
 
@@ -217,7 +239,10 @@ def transform_dataset_op(
     logging.info(f'Creating dataset definition for {split} split')
     dataset = etl.create_parquet_dataset(
         client=client,
-        data_path=parquet_dataset.path,
+        data_path=os.path.join(
+            parquet_dataset.path.replace('/gcs/', 'gs://'),
+            split
+        ),
         part_mem_frac=part_mem_frac
     )
 
@@ -228,20 +253,17 @@ def transform_dataset_op(
         workflow=criteo_workflow
     )
 
-    # Define output path for transformed files
-    transformed_fuse_dir = os.path.join(
-        transformed_dataset.path.replace('gs://', '/gcs/'), 
-        split
-    )
-
     logging.info('Applying transformation')
-    etl.save_dataset(dataset, transformed_fuse_dir)
+    etl.save_dataset(
+        dataset, os.path.join(transformed_dataset.path, split)
+    )
 
     transformed_dataset.metadata['split'] = split
 
 
 @dsl.component(
-    base_image=config.NVT_IMAGE_URI
+    base_image=config.NVT_IMAGE_URI,
+    install_kfp_package=False
 )
 def export_parquet_from_bq_op(
     output_dataset: Output[Dataset],
@@ -284,7 +306,10 @@ def export_parquet_from_bq_op(
     client = bigquery.Client(project=bq_project)
     dataset_ref = bigquery.DatasetReference(bq_project, bq_dataset_name)
 
-    full_output_path = os.path.join(output_dataset.path, split)
+    full_output_path = os.path.join(
+        output_dataset.path.replace('/gcs/', 'gs://'),
+        split
+    )
     
     logging.info(
         f'Extracting {bq_table_name} table to {full_output_path} path.'
@@ -301,8 +326,8 @@ def export_parquet_from_bq_op(
     output_dataset.metadata['split'] = split
 
     logging.info('Finished exporting to GCS.')
-    
-    
+
+
 @dsl.component
 def train_hugectr_op(
     transformed_train_dataset: Input[Dataset],
@@ -325,12 +350,14 @@ def train_hugectr_op(
     dropout_rate: int,
     lr: int ,
     num_epochs: int,
-    eval_interva: int,
+    eval_interval: int,
     snapshot: int,
     display_interval: int
 ):
     
     import logging
+    import json
+    import os
     from google.cloud import aiplatform as vertex_ai
 
     vertex_ai.init(
@@ -384,7 +411,7 @@ def train_hugectr_op(
     
     logging.info("Submitting a custom job to Vertex AI...")
     job = vertex_ai.CustomJob(
-        display_name=job_name,
+        display_name=job_display_name,
         worker_pool_specs=worker_pool_specs,
         base_output_dir=model.path
     )
