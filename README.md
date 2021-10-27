@@ -61,7 +61,7 @@ to drive the execution of the of different steps of the system:
 #### Creating Merlin development container image
 From Cloud Shell
 
-1. Get the develoment image Dockerfile
+1. Get Dockerfile for the Merlin development image:
 ```
 SRC_REPO=https://github.com/jarokaz/merlin-on-vertex
 LOCAL_DIR=merlin-env-setup
