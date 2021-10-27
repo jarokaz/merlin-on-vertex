@@ -56,10 +56,17 @@ to drive the execution of the of different steps of the system:
 
 
 ## Getting started
-1. [Setup your Vertex environment](provision) on Google Cloud.
-2. Start your AI Notebook instance (with CUDA Toolkit 11.0 installed and V100 GPUs).
-3. Open the JupyterLab then open a new Terminal
-4. Clone the repository to your AI Notebook instance:
+### Setting up Vertex AI environment
+#### Enabling the required services - TBD
+#### Creating an instance of Vertex Workbench managed notebook
+
+1. In the Cloud Console, go to the **Managed notebooks** tab of the **Vertex AI Workbench** page.
+2. Click <strong><span class="material-icons" aria-hidden="true"  translate="no">add_box</span>New
+notebook</strong>.
+
+### Setting up code samples
+1. Open the JupyterLab then open a new Terminal
+2. Clone the repository to your AI Notebook instance:
     ```
     git clone https://github.com/GoogleCloudPlatform/merlin-on-gcp.git
     cd merlin-on-gcp
