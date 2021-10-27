@@ -66,6 +66,14 @@ From Cloud Shell
 SRC_REPO=https://github.com/jarokaz/merlin-on-vertex
 LOCAL_DIR=merlin-env-setup
 kpt pkg get $SRC_REPO/env@main $LOCAL_DIR
+cd $LOCAL_DIR
+```
+2. Build and push the development image
+```
+PROJECT_ID=merlin-on-gcp
+IMAGE_URI=gcr.io/${PROJECT_ID}/merlin-dev-vertex
+docker build -t ${IMAGE_URI} .
+docker push ${IMAGE_URI}
 ```
 
 #### Creating and configuring an instance of Vertex Workbench managed notebook
