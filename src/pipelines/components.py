@@ -357,7 +357,7 @@ def train_hugectr_op(
             "replica_count": 1,
             "container_spec": {
                 "image_uri": training_image_url,
-                "command": ["python", "-m", "trainer.task"],
+                "command": ["python", "-m", "task"],
                 "args": [
                     f'--per_gpu_batch_size={per_gpu_batch_size}',
                     f'--train_data={train_data_fuse}', 
