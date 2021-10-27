@@ -8,7 +8,8 @@ This repository provides examples on how to run [NVIDIA Merlin](https://develope
 * Scaling and automating the system using [Vertex AI](https://cloud.google.com/vertex-ai) training, prediction, and pipeline services, as well as [Cloud GPUs](https://cloud.google.com/gpu). 
 
 
-**TODO**: Add overall architecture diagram to the solution on GCP
+![NVIDIA Merlin](images/overview.png)
+
 
 
 ## Overview
