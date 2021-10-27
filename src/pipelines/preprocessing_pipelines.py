@@ -26,9 +26,6 @@ GKE_ACCELERATOR_KEY = 'cloud.google.com/gke-accelerator'
 def preprocessing_csv(
     train_paths: list,
     valid_paths: list,
-    parquet_output_dir: str,
-    workflow_path: str,
-    transformed_output_dir: str,
     sep: str,
     shuffle: str
 ):
@@ -38,7 +35,6 @@ def preprocessing_csv(
     csv_to_parquet_train = components.convert_csv_to_parquet_op(
         data_paths=train_paths,
         split='train',
-        output_dir=parquet_output_dir,
         sep=sep,
         n_workers=int(config.GPU_LIMIT)
     )
@@ -51,7 +47,6 @@ def preprocessing_csv(
     csv_to_parquet_valid = components.convert_csv_to_parquet_op(
         data_paths=valid_paths,
         split='valid',
-        output_dir=parquet_output_dir,
         sep=sep,
         n_workers=int(config.GPU_LIMIT)
     )
@@ -65,7 +60,6 @@ def preprocessing_csv(
     # === Analyze train data split
     analyze_dataset = components.analyze_dataset_op(
         parquet_dataset=csv_to_parquet_train.outputs['output_dataset'],
-        workflow_path=workflow_path,
         n_workers=int(config.GPU_LIMIT)
     )
     analyze_dataset.set_cpu_limit(config.CPU_LIMIT)
@@ -79,7 +73,6 @@ def preprocessing_csv(
     transform_train_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         parquet_dataset=csv_to_parquet_train.outputs['output_dataset'],
-        transformed_output_dir=transformed_output_dir,
         n_workers=int(config.GPU_LIMIT)
     )
     transform_train_dataset.set_cpu_limit(config.CPU_LIMIT)
@@ -91,7 +84,6 @@ def preprocessing_csv(
     transform_valid_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         parquet_dataset=csv_to_parquet_valid.outputs['output_dataset'],
-        transformed_output_dir=transformed_output_dir,
         n_workers=int(config.GPU_LIMIT)
     )
     transform_valid_dataset.set_cpu_limit(config.CPU_LIMIT)
@@ -105,38 +97,28 @@ def preprocessing_csv(
     pipeline_root=config.PREPROCESS_BQ_PIPELINE_ROOT
 )
 def preprocessing_bq(
-    bq_project: str,
-    bq_dataset_name: str,
-    bq_train_table_name: str,
-    bq_valid_table_name: str,
-    bq_location: str,
-    parquet_output_dir: str,
-    workflow_path: str,
-    transformed_output_dir: str,
     shuffle: str
 ):
     # ==================== Exporting tables as Parquet ========================
 
     # === Export train table as parquet
     export_train_from_bq = components.export_parquet_from_bq_op(
-        bq_project=bq_project,
-        bq_dataset_name=bq_dataset_name,
-        bq_location=bq_location,
-        bq_table_name=bq_train_table_name,
-        split='train',
-        output_dir=parquet_output_dir,
+        bq_project=config.PROJECT_ID,
+        bq_dataset_name=config.BQ_DATASET_NAME,
+        bq_location=config.BQ_LOCATION,
+        bq_table_name=config.BQ_TRAIN_TABLE_NAME,
+        split='train'
     )
     export_train_from_bq.set_cpu_limit(config.CPU_LIMIT)
     export_train_from_bq.set_memory_limit(config.MEMORY_LIMIT)
 
     # === Export valid table as parquet
     export_valid_from_bq = components.export_parquet_from_bq_op(
-        bq_project=bq_project,
-        bq_dataset_name=bq_dataset_name,
-        bq_location=bq_location,
-        bq_table_name=bq_valid_table_name,
-        split='valid',
-        output_dir=parquet_output_dir,
+        bq_project=config.PROJECT_ID,
+        bq_dataset_name=config.BQ_DATASET_NAME,
+        bq_location=config.BQ_LOCATION,
+        bq_table_name=config.BQ_VALID_TABLE_NAME,
+        split='valid'
     )
     export_valid_from_bq.set_cpu_limit(config.CPU_LIMIT)
     export_valid_from_bq.set_memory_limit(config.MEMORY_LIMIT)
@@ -146,7 +128,6 @@ def preprocessing_bq(
     # === Analyze train data split
     analyze_dataset = components.analyze_dataset_op(
         parquet_dataset=export_train_from_bq.outputs['output_dataset'],
-        workflow_path=workflow_path,
         n_workers=int(config.GPU_LIMIT)
     )
     analyze_dataset.set_cpu_limit(config.CPU_LIMIT)
@@ -160,7 +141,6 @@ def preprocessing_bq(
     transform_train_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         parquet_dataset=export_train_from_bq.outputs['output_dataset'],
-        transformed_output_dir=transformed_output_dir,
         n_workers=int(config.GPU_LIMIT)
     )
     transform_train_dataset.set_cpu_limit(config.CPU_LIMIT)
@@ -172,7 +152,6 @@ def preprocessing_bq(
     transform_valid_dataset = components.transform_dataset_op(
         workflow=analyze_dataset.outputs['workflow'],
         parquet_dataset=export_valid_from_bq.outputs['output_dataset'],
-        transformed_output_dir=transformed_output_dir,
         n_workers=int(config.GPU_LIMIT)
     )
     transform_valid_dataset.set_cpu_limit(config.CPU_LIMIT)
