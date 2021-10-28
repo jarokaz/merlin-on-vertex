@@ -24,8 +24,8 @@ import shutil
 import hugectr
 
 from hugectr.inference import InferenceParams, CreateInferenceSession
-from trainer.model import create_model
-from trainer import utils
+from model import create_model
+import utils
 
 MODEL_PREFIX = 'deepfm'
 SNAPSHOT_DIR = 'snapshots'
