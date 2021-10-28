@@ -90,7 +90,7 @@ def export_ensemble(
         name=MODEL_PREFIX,
         output_path=output_path,
         label_columns=label_columns,
-        cats=categotical_columns,
+        cats=categorical_columns,
         conts=continuous_columns,
         max_batch_size=MAX_BATCH_SIZE,
     )

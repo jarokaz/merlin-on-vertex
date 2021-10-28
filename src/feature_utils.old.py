@@ -13,12 +13,18 @@
 """Dataset features."""
 
 import numpy as np
+from typing import Dict, Union
 
-from dataclasses import dataclass
-from dataclasses import field
+from typing import Dict, Union
 
-def _get_criteo_col_dtypes(): 
+def get_criteo_col_dtypes() -> Dict[str,Union[str, np.int32]]:
+    '''Returns a dict mapping column names to numpy dtype.
+    This function is specific to Criteo Dataset'''
+    # Specify column dtypes. Note that "hex" means that
+    # the values will be hexadecimal strings that should
+    # be converted to int32
     col_dtypes = {}
+
     col_dtypes["label"] = np.int32
     for x in ["I" + str(i) for i in range(1, 14)]:
         col_dtypes[x] = np.int32
@@ -27,29 +33,20 @@ def _get_criteo_col_dtypes():
 
     return col_dtypes
 
-def _categorical_columns():
-    return ["C" + str(x) for x in range(1, 27)]
 
-def _numerical_columns():
-    return ["I" + str(x) for x in range(1, 14)]
+def categorical_columns():
+    columns = []
+    for col_name, col_type in get_criteo_col_dtypes().items:
+        if col_type == np.int32:
+            columns.append(col_name)
+    return columns
 
-def _label_columns():
+def numerical_columns():
+    columns = []
+    for col_name, col_type in get_criteo_col_dtypes().items:
+        if col_type == 'hex':
+            columns.append(col_name)
+    return columns
+
+def label_columns():
     return ['label']
-
-
-@dataclass
-class InputOutputConfig:
-    '''This class contains configurations specific to the Criteo dataset.'''
-    
-    num_slots: int  = 26
-    max_nnz: int = 2
-    num_outputs: int = 1
-    dtypes: dict = field(default_factory=_get_criteo_col_dtypes)
-    categorical_columns: list = field(default_factory=_categorical_columns)
-    continuous_columns: list = field(default_factory=_numerical_columns)
-    label_columns: list = field(default_factory=_label_columns)
-
-
-
-
-

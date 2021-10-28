@@ -1,4 +1,4 @@
-FROM gcr.io/merlin-on-gcp/dongm-merlin-inference-hugectr:v0.6.1
+FROM gcr.io/merlin-on-gcp/dongm-merlin-inference-hugectr:latest
 
 EXPOSE 8000
 EXPOSE 8001
@@ -8,7 +8,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 
 WORKDIR /src
 
-COPY serving/entrypoint.sh ./
+COPY src/serving/entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["./entrypoint.sh"]
