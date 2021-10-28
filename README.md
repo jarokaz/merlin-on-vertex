@@ -56,35 +56,56 @@ to drive the execution of the of different steps of the system:
 
 
 ## Getting started
-### Setting up Vertex AI environment
-#### Enabling the required services - TBD
-#### Creating Merlin development container image
+### Enabling the required services
+From Cloud Shell, run the following `gcloud` command to enable the required Cloud APIs:
+```
+PROJECT_ID=merlin-on-gcp
+gcloud services enable \
+    aiplatform.googleapis.com         \
+    bigquery.googleapis.com           \
+    bigquerystorage.googleapis.com    \
+    cloudapis.googleapis.com          \
+    cloudbuild.googleapis.com         \
+    compute.googleapis.com            \
+    containerregistry.googleapis.com  \
+    notebooks.googleapis.com          \
+    storage.googleapis.com            \
+    --project=${PROJECT_ID}
+```
+
+
+### Creating Merlin development container image
 From Cloud Shell
 
 1. Get Dockerfile for the Merlin development image:
 ```
-SRC_REPO=https://github.com/jarokaz/merlin-on-vertex
+SRC_REPO=https://github.com/GoogleCloudPlatform/merlin-on-vertex
 LOCAL_DIR=merlin-env-setup
 kpt pkg get $SRC_REPO/env@main $LOCAL_DIR
 cd $LOCAL_DIR
 ```
 2. Build and push the development image
 ```
-PROJECT_ID=merlin-on-gcp
+PROJECT_ID=merlin-on-vertex # change to your project id.
 IMAGE_URI=gcr.io/${PROJECT_ID}/merlin-dev-vertex
 gcloud builds submit --timeout "2h" --tag ${IMAGE_URI} . --machine-type=e2-highcpu-8
 ```
 
-#### Creating and configuring an instance of Vertex Workbench managed notebook
+### Creating and configuring an instance of Vertex Workbench managed notebook
 
 1. Follow the instructions in the [Create a managed notebooks instance how-to guide](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance):
-    1. In the [Use custom Docker images settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-2) enter a name of the image you created in the previous step: `gcr.io/{PROJECT_ID}/merlin-dev-vertex:latest`
-    2. In the [Configure hardware settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-3) select your GPU configuration. We recommend a machine with two NVIDIA T4 or A100 GPUs. 
-2. Set up code samples
-    1. Open the JupyterLab then open a new Terminal
-    2. Clone the repository to your AI Notebook instance:
+    * In the [Use custom Docker images settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-2) enter a name of the image you created in the previous step: `gcr.io/<your-project-id>/merlin-dev-vertex:latest`
+    * In the [Configure hardware settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-3) select your GPU configuration. We recommend a machine with two `NVIDIA Tesla T4` or `NVIDIA Tesla A100` GPUs. 
+
+### Run the example
+After the Vertex Workbench managed notebook is created, peform the following steps:
+
+1. Click on the OPEN JUPYTERLAB link on the notebook instance.
+2. Click on the New Launcher button, then start a new terminal session.
+3. Clone the repository to your notebook instance:
     ```
-    git clone https://github.com/GoogleCloudPlatform/merlin-on-gcp.git
+    git clone https://github.com/GoogleCloudPlatform/merlin-on-vertex.git
+    cd merlin-on-vertex
     ```
     
 
