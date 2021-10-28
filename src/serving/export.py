@@ -64,7 +64,7 @@ def export_ensemble(
     workflow_path,
     saved_model_path,
     output_path,
-    categotical_columns,
+    categorical_columns,
     continuous_columns,
     label_columns):
           
