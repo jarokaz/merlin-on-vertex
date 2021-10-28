@@ -56,7 +56,24 @@ to drive the execution of the of different steps of the system:
 
 
 ## Getting started
-### Enabling the required services - TBD
+### Enabling the required services
+From Cloud Shell, run the following `gcloud` command to enable the required Cloud APIs:
+```
+PROJECT_ID=merlin-on-gcp
+gcloud services enable \
+    aiplatform.googleapis.com         \
+    bigquery.googleapis.com           \
+    bigquerystorage.googleapis.com    \
+    cloudapis.googleapis.com          \
+    cloudbuild.googleapis.com         \
+    compute.googleapis.com            \
+    containerregistry.googleapis.com  \
+    notebooks.googleapis.com          \
+    storage.googleapis.com            \
+    --project=${PROJECT_ID}
+```
+
+
 ### Creating Merlin development container image
 From Cloud Shell
 
@@ -69,7 +86,7 @@ cd $LOCAL_DIR
 ```
 2. Build and push the development image
 ```
-PROJECT_ID=merlin-on-gcp
+PROJECT_ID=merlin-on-vertex # change to your project id.
 IMAGE_URI=gcr.io/${PROJECT_ID}/merlin-dev-vertex
 gcloud builds submit --timeout "2h" --tag ${IMAGE_URI} . --machine-type=e2-highcpu-8
 ```
