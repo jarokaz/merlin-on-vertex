@@ -1,6 +1,9 @@
-FROM nvcr.io/nvidia/merlin/merlin-training:21.09
+# Latest version provided by NVIDIA (10/28/2021)
+# Still Failing: NVTabular with T4 GPUs
+FROM gcr.io/merlin-on-gcp/dongm-merlin-train-hugectr:latest
 
-RUN pip3 install cloudml-hypertune
+RUN pip install cloudml-hypertune
+RUN pip install google-cloud-aiplatform
 
 WORKDIR /src
 

@@ -24,8 +24,8 @@ import shutil
 import hugectr
 
 from hugectr.inference import InferenceParams, CreateInferenceSession
-from trainer.model import create_model
-from trainer import utils
+from model import create_model
+import utils
 
 MODEL_PREFIX = 'deepfm'
 SNAPSHOT_DIR = 'snapshots'
@@ -278,11 +278,8 @@ if __name__ == '__main__':
     cardinalities = utils.retrieve_cardinalities(args.schema)
     logging.info('Cardinalities are extracted.')
     
-    slot_size_array = [int(cardinality) for cardinality in cardinalities.values()]
-
-   
+    args.slot_size_array = [int(cardinality) for cardinality in cardinalities.values()]
     args.gpus = json.loads(args.gpus)
-    args.slot_size_array = json.loads(slot_size_array)
 
     logging.info(f"Args: {args}")
     start_time = time.time()
