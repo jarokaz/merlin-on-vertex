@@ -21,17 +21,17 @@ from nvtabular.inference.triton import export_hugectr_ensemble
 from pathlib import Path
 
 
-MODEL_REGISTRY_PATH = "/models"
 HUGECTR_CONFIG_FILENAME = "ps.json"
 
 
 def create_hugectr_backend_config(
-    model_path):
+    model_path,
+    model_registry_path='/models'):
     
     p = Path(model_path)
     model_version = p.parts[-1]
     model_name = p.parts[-2]
-    model_path_in_registry = os.path.join(MODEL_REGISTRY_PATH, model_name, model_version)
+    model_path_in_registry = os.path.join(model_registry_path, model_name, model_version)
     
     dense_pattern=f'{model_name}_dense_*.model'
     dense_path = [os.path.join(model_path_in_registry, path.name) 
@@ -65,7 +65,8 @@ def export_ensemble(
     max_nnz,
     num_outputs,
     embedding_vector_size,
-    max_batch_size
+    max_batch_size,
+    model_registry_path='/models'
 ):
           
     workflow = nvt.Workflow.load(workflow_path)
@@ -73,7 +74,7 @@ def export_ensemble(
     hugectr_params = dict()
     graph_filename = f'{model_name}.json'
     hugectr_params["config"] = os.path.join(
-        MODEL_REGISTRY_PATH,
+        model_registry_path,
         model_name,
         "1",
         graph_filename)
@@ -96,7 +97,8 @@ def export_ensemble(
     )
     
     hugectr_backend_config = create_hugectr_backend_config(
-        model_path=os.path.join(output_path, model_name, '1'))
+        model_path=os.path.join(output_path, model_name, '1'),
+        model_registry_path)
     
     with open(os.path.join(output_path, HUGECTR_CONFIG_FILENAME), 'w') as f:
         json.dump(hugectr_backend_config, f)
