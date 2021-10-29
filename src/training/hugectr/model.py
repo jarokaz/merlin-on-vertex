@@ -52,14 +52,14 @@ def create_model(
                                       check_type=hugectr.Check_t.Non,
                                       num_workers=num_workers)
 
-    optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.Adam,
-                                        update_type=hugectr.Update_t.Global,
-                                        beta1=0.9,
-                                        beta2=0.999,
-                                        epsilon=0.0000001)
+    #optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.Adam,
+    #                                    update_type=hugectr.Update_t.Global,
+    #                                    beta1=0.9,
+    #                                    beta2=0.999,
+    #                                    epsilon=0.0000001)
     
-    #optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.SGD,
-    #                                    update_type=hugectr.Update_t.Global)
+    optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.SGD,
+                                        update_type=hugectr.Update_t.Global)
 
     model = hugectr.Model(solver, reader, optimizer)
 
