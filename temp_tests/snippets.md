@@ -1,6 +1,6 @@
 docker run -it --rm --gpus all --cap-add SYS_NICE \
 --network host \
--e AIP_STORAGE_URI='gs://jk-merlin-dev/ensembles/triton-ensemble-20211029201826' \
+-e AIP_STORAGE_URI='gs://jk-merlin-dev/ensembles/triton-ensemble-20211029205018' \
 gcr.io/jk-mlops-dev/triton-hugectr-inference:latest
 
 
