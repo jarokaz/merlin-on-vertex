@@ -51,13 +51,13 @@ def set_job_dirs():
 def save_model(model, model_dir):
     """Saves model graph and model parameters."""
                      
-    graph_path = os.path.join(model_dir, f'{MODEL_PREFIX}.json')
-    logging.info('Saving model graph to: {}'.format(graph_path))  
-    model.graph_to_json(graph_config_file=graph_path)
-   
     parameters_path = os.path.join(model_dir, MODEL_PREFIX)
     logging.info('Saving model parameters to: {}'.format(parameters_path)) 
     model.save_params_to_files(prefix=parameters_path)
+    
+    graph_path = os.path.join(model_dir, f'{MODEL_PREFIX}.json')
+    logging.info('Saving model graph to: {}'.format(graph_path))  
+    model.graph_to_json(graph_config_file=graph_path)
     
 
 def evaluate_model(
