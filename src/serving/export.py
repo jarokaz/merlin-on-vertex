@@ -98,7 +98,7 @@ def export_ensemble(
     
     hugectr_backend_config = create_hugectr_backend_config(
         model_path=os.path.join(output_path, model_name, '1'),
-        model_registry_path)
+        model_registry_path=model_registry_path)
     
     with open(os.path.join(output_path, HUGECTR_CONFIG_FILENAME), 'w') as f:
         json.dump(hugectr_backend_config, f)
