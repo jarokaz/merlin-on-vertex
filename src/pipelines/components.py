@@ -79,12 +79,12 @@ def convert_csv_to_parquet_op(
     import logging
     import os
     from preprocessing import etl
-    import feature_utils
+    import configs
 
     logging.basicConfig(level=logging.INFO)
 
     logging.info('Getting column names and dtypes')
-    col_dtypes = feature_utils.get_criteo_col_dtypes()
+    col_dtypes = configs._get_criteo_col_dtypes()
 
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
@@ -436,7 +436,7 @@ def export_triton_ensemble(
   
     import logging
     from serving import export
-    import feature_utils
+    import configs
     
     model_location_fuse = model.path.replace("gs://", "/gcs/")
     workflow_location_fuse =  workflow.path.replace("gs://", "/gcs/")
@@ -447,9 +447,9 @@ def export_triton_ensemble(
         workflow_path=workflow_location_fuse,
         saved_model_path=model_location_fuse,
         output_path=output_location_fuse,
-        categotical_columns=feature_utils.categotical_columns(),
-        continuous_columns=feature_utils.continuous_columns(),
-        label_columns=feature_utils.label_columns()
+        categotical_columns=configs.categotical_columns(),
+        continuous_columns=configs.continuous_columns(),
+        label_columns=configs.label_columns()
     )
     logging.info('Triton model exported.')
     
