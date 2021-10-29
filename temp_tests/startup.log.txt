@@ -1,0 +1,534 @@
+Copying model ensemble from gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606 to /models
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/ps.json...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm.json...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm0_opt_sparse_0.model...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm0_sparse_0.model/emb_vector...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm0_sparse_0.model/key...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm0_sparse_0.model/slot_id...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm_dense_0.model...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm_opt_dense_0.model...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/config.pbtxt...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_ens/config.pbtxt...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/model.py...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C1.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C10.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C11.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C12.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C13.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C14.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C3.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C15.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C16.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C17.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C18.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C19.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C2.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C20.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C22.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C21.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C23.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C24.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C25.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C26.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C4.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C5.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C6.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C7.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C8.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C9.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/column_types.json...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/metadata.json...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/workflow.pkl...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/config.pbtxt...
+/ [41/41 files][  4.5 GiB/  4.5 GiB] 100% Done  83.6 MiB/s ETA 00:00:00         
+Operation completed over 41 objects/4.5 GiB.                                     
+Starting Triton Server
+I1029 18:05:23.324191 2271 metrics.cc:298] Collecting metrics for GPU 0: A100-SXM4-40GB
+I1029 18:05:23.324471 2271 metrics.cc:298] Collecting metrics for GPU 1: A100-SXM4-40GB
+I1029 18:05:23.567676 2271 pinned_memory_manager.cc:240] Pinned memory pool is created at '0x7f342e000000' with size 268435456
+I1029 18:05:23.568656 2271 cuda_memory_manager.cc:105] CUDA memory pool is created on device 0 with size 67108864
+I1029 18:05:23.568679 2271 cuda_memory_manager.cc:105] CUDA memory pool is created on device 1 with size 67108864
+I1029 18:05:23.715436 2271 model_repository_manager.cc:1022] loading: deepfm:1
+I1029 18:05:23.816094 2271 model_repository_manager.cc:1022] loading: deepfm_nvt:1
+E1029 18:05:23.817953 2271 model_repository_manager.cc:1186] failed to load 'deepfm' version 1: Not found: unable to load backend library: /usr/lib/x86_64-linux-gnu/libjemalloc.so.2: cannot allocate memory in static TLS block
+I1029 18:05:23.921709 2271 python.cc:1875] TRITONBACKEND_ModelInstanceInitialize: deepfm_nvt_0 (CPU device 0)
+I1029 18:06:40.161745 2271 model_repository_manager.cc:1183] successfully loaded 'deepfm_nvt' version 1
+E1029 18:06:40.161982 2271 model_repository_manager.cc:1375] Invalid argument: ensemble 'deepfm_ens' depends on 'deepfm' which has no loaded version
+I1029 18:06:40.162350 2271 server.cc:522] 
++------------------+------+
+| Repository Agent | Path |
++------------------+------+
++------------------+------+
+
+I1029 18:06:40.162473 2271 server.cc:549] 
++---------+-------------------------------------------------------+--------+
+| Backend | Path                                                  | Config |
++---------+-------------------------------------------------------+--------+
+| python  | /opt/tritonserver/backends/python/libtriton_python.so | {}     |
++---------+-------------------------------------------------------+--------+
+
+I1029 18:06:40.162596 2271 server.cc:592] 
++------------+---------+---------------------------------------------------------------------------------------------------------------+
+| Model      | Version | Status                                                                                                        |
++------------+---------+---------------------------------------------------------------------------------------------------------------+
+| deepfm     | 1       | UNAVAILABLE: Not found: unable to load backend library: /usr/lib/x86_64-linux-gnu/libjemalloc.so.2: cannot al |
+|            |         | locate memory in static TLS block                                                                             |
+| deepfm_nvt | 1       | READY                                                                                                         |
++------------+---------+---------------------------------------------------------------------------------------------------------------+
+
+I1029 18:06:40.162766 2271 tritonserver.cc:1920] 
++----------------------------------+----------------------------------------------------------------------------------------------------+
+| Option                           | Value                                                                                              |
++----------------------------------+----------------------------------------------------------------------------------------------------+
+| server_id                        | triton                                                                                             |
+| server_version                   | 2.15.0                                                                                             |
+| server_extensions                | classification sequence model_repository model_repository(unload_dependents) schedule_policy model |
+|                                  | _configuration system_shared_memory cuda_shared_memory binary_tensor_data statistics               |
+| model_repository_path[0]         | /models                                                                                            |
+| model_control_mode               | MODE_NONE                                                                                          |
+| strict_model_config              | 1                                                                                                  |
+| rate_limit                       | OFF                                                                                                |
+| pinned_memory_pool_byte_size     | 268435456                                                                                          |
+| cuda_memory_pool_byte_size{0}    | 67108864                                                                                           |
+| cuda_memory_pool_byte_size{1}    | 67108864                                                                                           |
+| response_cache_byte_size         | 0                                                                                                  |
+| min_supported_compute_capability | 6.0                                                                                                |
+| strict_readiness                 | 1                                                                                                  |
+| exit_timeout                     | 30                                                                                                 |
++----------------------------------+----------------------------------------------------------------------------------------------------+
+
+I1029 18:06:40.162816 2271 server.cc:252] Waiting for in-flight requests to complete.
+I1029 18:06:40.162826 2271 model_repository_manager.cc:1055] unloading: deepfm_nvt:1
+I1029 18:06:40.163010 2271 server.cc:267] Timeout 30: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:41.163113 2271 server.cc:267] Timeout 29: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:42.163245 2271 server.cc:267] Timeout 28: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:43.163375 2271 server.cc:267] Timeout 27: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:44.163501 2271 server.cc:267] Timeout 26: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:45.163637 2271 server.cc:267] Timeout 25: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:46.163775 2271 server.cc:267] Timeout 24: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:47.163904 2271 server.cc:267] Timeout 23: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:48.164044 2271 server.cc:267] Timeout 22: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:49.164184 2271 server.cc:267] Timeout 21: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:50.164324 2271 server.cc:267] Timeout 20: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:51.164456 2271 server.cc:267] Timeout 19: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:52.164597 2271 server.cc:267] Timeout 18: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:53.164728 2271 server.cc:267] Timeout 17: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:54.164857 2271 server.cc:267] Timeout 16: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:55.164993 2271 server.cc:267] Timeout 15: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:56.165174 2271 server.cc:267] Timeout 14: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:57.165408 2271 server.cc:267] Timeout 13: Found 1 live models and 0 in-flight non-inference requests
+free(): invalid pointer
+I1029 18:06:58.165780 2271 server.cc:267] Timeout 12: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:06:59.165971 2271 server.cc:267] Timeout 11: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:00.166119 2271 server.cc:267] Timeout 10: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:01.166286 2271 server.cc:267] Timeout 9: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:02.166458 2271 server.cc:267] Timeout 8: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:03.166602 2271 server.cc:267] Timeout 7: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:04.166757 2271 server.cc:267] Timeout 6: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:05.166910 2271 server.cc:267] Timeout 5: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:06.167177 2271 server.cc:267] Timeout 4: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:07.167339 2271 server.cc:267] Timeout 3: Found 1 live models and 0 in-flight non-inference requests
+I1029 18:07:07.524170 2271 model_repository_manager.cc:1166] successfully unloaded 'deepfm_nvt' version 1
+I1029 18:07:08.167472 2271 server.cc:267] Timeout 2: Found 0 live models and 0 in-flight non-inference requests
+error: creating server: Internal - failed to load all models
+Error on line: 53
+Caused by: tritonserver --model-repository=$MODEL_REPOSITORY --backend-config=hugectr,ps=$MODEL_REPOSITORY/ps.json
+That returned exit status: 1
+Aborting...
+(base) jupyter@vm-80d0c6a8-aa9f-4ecd-b63f-da5678a8a7b5:~$ docker run -it --rm --gpus all --cap-add SYS_NICE --network host -e AIP_STORAGE_URI='gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606' gcr.io/jk-mlops-dev/triton-hugectr-inference:latest
+Copying model ensemble from gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606 to /models
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/ps.json...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm.json...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm0_opt_sparse_0.model...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm0_sparse_0.model/emb_vector...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm0_sparse_0.model/key...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm0_sparse_0.model/slot_id...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm_dense_0.model...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/1/deepfm_opt_dense_0.model...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm/config.pbtxt...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_ens/config.pbtxt...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/model.py...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C1.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C10.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C11.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C22.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C12.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C13.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C14.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C15.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C16.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C17.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C18.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C19.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C2.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C20.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C21.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C23.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C24.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C25.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C26.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C3.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C4.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C5.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C6.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C7.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C8.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/categories/unique.C9.parquet...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/column_types.json...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/metadata.json...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/1/workflow/workflow.pkl...
+Copying gs://jk-merlin-dev/ensembles/triton-ensemble-20211029175606/deepfm_nvt/config.pbtxt...
+\ [41/41 files][  4.5 GiB/  4.5 GiB] 100% Done  85.2 MiB/s ETA 00:00:00         
+Operation completed over 41 objects/4.5 GiB.                                     
+Starting Triton Server
+I1029 18:09:18.315204 2271 metrics.cc:298] Collecting metrics for GPU 0: A100-SXM4-40GB
+I1029 18:09:18.315434 2271 metrics.cc:298] Collecting metrics for GPU 1: A100-SXM4-40GB
+I1029 18:09:18.557113 2271 pinned_memory_manager.cc:240] Pinned memory pool is created at '0x7f8112000000' with size 268435456
+I1029 18:09:18.558141 2271 cuda_memory_manager.cc:105] CUDA memory pool is created on device 0 with size 67108864
+I1029 18:09:18.558158 2271 cuda_memory_manager.cc:105] CUDA memory pool is created on device 1 with size 67108864
+I1029 18:09:18.703599 2271 model_repository_manager.cc:1022] loading: deepfm:1
+I1029 18:09:18.803994 2271 model_repository_manager.cc:1022] loading: deepfm_nvt:1
+I1029 18:09:18.834040 2271 hugectr.cc:1037] TRITONBACKEND_Initialize: hugectr
+I1029 18:09:18.834078 2271 hugectr.cc:1047] Triton TRITONBACKEND API version: 1.6
+I1029 18:09:18.834084 2271 hugectr.cc:1053] 'hugectr' TRITONBACKEND API version: 1.6
+I1029 18:09:18.834097 2271 hugectr.cc:1078] The HugeCTR backend Repository location: /opt/tritonserver/backends/hugectr
+I1029 18:09:18.834132 2271 hugectr.cc:1088] The HugeCTR backend configuration:
+{"cmdline":{"ps":"/models/ps.json"}}
+I1029 18:09:18.834243 2271 hugectr.cc:280] *****Parsing Parameter Server Configuration from /models/ps.json
+I1029 18:09:18.834283 2271 hugectr.cc:294] Enable support for Int64 embedding key: 1
+I1029 18:09:18.834294 2271 hugectr.cc:298] The depolyment Data base type is: local
+I1029 18:09:18.834301 2271 hugectr.cc:304] The depolyment cache_size_percentage_redis is: 
+I1029 18:09:18.834307 2271 hugectr.cc:308] Redis ip is: 127.0.0.1:7000
+I1029 18:09:18.834313 2271 hugectr.cc:312] Local RocksDB path is: 
+I1029 18:09:18.834321 2271 hugectr.cc:323] The model name is: deepfm
+I1029 18:09:18.834327 2271 hugectr.cc:326] The model dense file path is: /models/deepfm/1/deepfm_dense_0.model
+I1029 18:09:18.834335 2271 hugectr.cc:331] The model network file path is: /models/deepfm/1/deepfm.json
+I1029 18:09:18.834346 2271 hugectr.cc:364] *****The HugeCTR Backend Parameter Server is creating...*****
+I1029 18:09:18.834359 2271 hugectr.cc:372] ***** Parameter Server(Int64) is creating...***** 
+[29d18h09m18s][HUGECTR][INFO]: default_emb_vec_value is not specified using default: 0.000000
+I1029 18:10:11.390608 2271 hugectr.cc:380] *****The HugeCTR Backend Backend created the Parameter Server successfully!*****
+I1029 18:10:11.394831 2271 hugectr.cc:1157] TRITONBACKEND_ModelInitialize: deepfm (version 1)
+I1029 18:10:11.394853 2271 hugectr.cc:1172] Repository location: /models/deepfm
+I1029 18:10:11.394859 2271 hugectr.cc:1189] backend configuration in mode:
+{"cmdline":{"ps":"/models/ps.json"}}
+I1029 18:10:11.544854 2271 hugectr.cc:570] Verifying model configuration:
+{
+    "name": "deepfm",
+    "platform": "",
+    "backend": "hugectr",
+    "version_policy": {
+        "latest": {
+            "num_versions": 1
+        }
+    },
+    "max_batch_size": 64,
+    "input": [
+        {
+            "name": "DES",
+            "data_type": "TYPE_FP32",
+            "format": "FORMAT_NONE",
+            "dims": [
+                -1
+            ],
+            "is_shape_tensor": false,
+            "allow_ragged_batch": false
+        },
+        {
+            "name": "CATCOLUMN",
+            "data_type": "TYPE_INT64",
+            "format": "FORMAT_NONE",
+            "dims": [
+                -1
+            ],
+            "is_shape_tensor": false,
+            "allow_ragged_batch": false
+        },
+        {
+            "name": "ROWINDEX",
+            "data_type": "TYPE_INT32",
+            "format": "FORMAT_NONE",
+            "dims": [
+                -1
+            ],
+            "is_shape_tensor": false,
+            "allow_ragged_batch": false
+        }
+    ],
+    "output": [
+        {
+            "name": "OUTPUT0",
+            "data_type": "TYPE_FP32",
+            "dims": [
+                -1
+            ],
+            "label_filename": "",
+            "is_shape_tensor": false
+        }
+    ],
+    "batch_input": [],
+    "batch_output": [],
+    "optimization": {
+        "priority": "PRIORITY_DEFAULT",
+        "input_pinned_memory": {
+            "enable": true
+        },
+        "output_pinned_memory": {
+            "enable": true
+        },
+        "gather_kernel_buffer_threshold": 0,
+        "eager_batching": false
+    },
+    "instance_group": [
+        {
+            "name": "deepfm_0",
+            "kind": "KIND_GPU",
+            "count": 1,
+            "gpus": [
+                0
+            ],
+            "secondary_devices": [],
+            "profile": [],
+            "passive": false,
+            "host_policy": ""
+        }
+    ],
+    "default_model_filename": "",
+    "cc_model_filenames": {},
+    "metric_tags": {},
+    "parameters": {
+        "config": {
+            "string_value": "/models/deepfm/1/deepfm.json"
+        },
+        "cat_feature_num": {
+            "string_value": "26"
+        },
+        "label_dim": {
+            "string_value": "1"
+        },
+        "max_nnz": {
+            "string_value": "2"
+        },
+        "embedding_vector_size": {
+            "string_value": "11"
+        },
+        "gpucacheper": {
+            "string_value": "0.5"
+        },
+        "des_feature_num": {
+            "string_value": "13"
+        },
+        "embeddingkey_long_type": {
+            "string_value": "true"
+        },
+        "gpucache": {
+            "string_value": "true"
+        },
+        "slots": {
+            "string_value": "26"
+        }
+    },
+    "model_warmup": []
+}
+I1029 18:10:11.544992 2271 hugectr.cc:656] The model configuration:
+{
+    "name": "deepfm",
+    "platform": "",
+    "backend": "hugectr",
+    "version_policy": {
+        "latest": {
+            "num_versions": 1
+        }
+    },
+    "max_batch_size": 64,
+    "input": [
+        {
+            "name": "DES",
+            "data_type": "TYPE_FP32",
+            "format": "FORMAT_NONE",
+            "dims": [
+                -1
+            ],
+            "is_shape_tensor": false,
+            "allow_ragged_batch": false
+        },
+        {
+            "name": "CATCOLUMN",
+            "data_type": "TYPE_INT64",
+            "format": "FORMAT_NONE",
+            "dims": [
+                -1
+            ],
+            "is_shape_tensor": false,
+            "allow_ragged_batch": false
+        },
+        {
+            "name": "ROWINDEX",
+            "data_type": "TYPE_INT32",
+            "format": "FORMAT_NONE",
+            "dims": [
+                -1
+            ],
+            "is_shape_tensor": false,
+            "allow_ragged_batch": false
+        }
+    ],
+    "output": [
+        {
+            "name": "OUTPUT0",
+            "data_type": "TYPE_FP32",
+            "dims": [
+                -1
+            ],
+            "label_filename": "",
+            "is_shape_tensor": false
+        }
+    ],
+    "batch_input": [],
+    "batch_output": [],
+    "optimization": {
+        "priority": "PRIORITY_DEFAULT",
+        "input_pinned_memory": {
+            "enable": true
+        },
+        "output_pinned_memory": {
+            "enable": true
+        },
+        "gather_kernel_buffer_threshold": 0,
+        "eager_batching": false
+    },
+    "instance_group": [
+        {
+            "name": "deepfm_0",
+            "kind": "KIND_GPU",
+            "count": 1,
+            "gpus": [
+                0
+            ],
+            "secondary_devices": [],
+            "profile": [],
+            "passive": false,
+            "host_policy": ""
+        }
+    ],
+    "default_model_filename": "",
+    "cc_model_filenames": {},
+    "metric_tags": {},
+    "parameters": {
+        "config": {
+            "string_value": "/models/deepfm/1/deepfm.json"
+        },
+        "cat_feature_num": {
+            "string_value": "26"
+        },
+        "label_dim": {
+            "string_value": "1"
+        },
+        "max_nnz": {
+            "string_value": "2"
+        },
+        "embedding_vector_size": {
+            "string_value": "11"
+        },
+        "gpucacheper": {
+            "string_value": "0.5"
+        },
+        "des_feature_num": {
+            "string_value": "13"
+        },
+        "embeddingkey_long_type": {
+            "string_value": "true"
+        },
+        "gpucache": {
+            "string_value": "true"
+        },
+        "slots": {
+            "string_value": "26"
+        }
+    },
+    "model_warmup": []
+}
+I1029 18:10:11.545048 2271 hugectr.cc:693] slots set is : 26
+I1029 18:10:11.545057 2271 hugectr.cc:701] desene number is : 13
+I1029 18:10:11.545071 2271 hugectr.cc:710] cat_feature number is : 26
+I1029 18:10:11.545078 2271 hugectr.cc:723] embedding size is  11
+I1029 18:10:11.545090 2271 hugectr.cc:731] maxnnz is 2
+I1029 18:10:11.545104 2271 hugectr.cc:738] Hugectr model config path is /models/deepfm/1/deepfm.json
+I1029 18:10:11.545110 2271 hugectr.cc:748] support gpu cache is 1
+I1029 18:10:11.545121 2271 hugectr.cc:768] gpu cache per is 0.500000
+I1029 18:10:11.545127 2271 hugectr.cc:785] Label dim is 1
+I1029 18:10:11.545132 2271 hugectr.cc:797] Support long long embedding key is 1
+I1029 18:10:11.545140 2271 hugectr.cc:802] max_batch_size is 64
+I1029 18:10:11.545149 2271 hugectr.cc:813] ******Creating Embedding Cache for model deepfm in device 0
+I1029 18:10:11.561885 2271 hugectr.cc:833] ******Creating Embedding Cache for model deepfm successfully
+I1029 18:10:11.563742 2271 hugectr.cc:1258] TRITONBACKEND_ModelInstanceInitialize: deepfm_0 (device 0)
+I1029 18:10:11.563762 2271 hugectr.cc:948] Triton Model Instance Initialization on device 0
+I1029 18:10:11.563776 2271 hugectr.cc:959] Dense Feature buffer allocation: 
+I1029 18:10:11.618965 2271 hugectr.cc:965] Categorical Feature buffer allocation: 
+I1029 18:10:11.620174 2271 hugectr.cc:980] Categorical Row Index buffer allocation: 
+I1029 18:10:11.620209 2271 hugectr.cc:986] Predict result buffer allocation: 
+I1029 18:10:11.620247 2271 hugectr.cc:1281] ******Loading HugeCTR Model***** 
+I1029 18:10:11.620256 2271 hugectr.cc:1004] The model origin json configuration file path is: /models/deepfm/1/deepfm.json
+[29d18h10m11s][HUGECTR][INFO]: Global seed is 928211990
+[29d18h10m13s][HUGECTR][INFO]: Peer-to-peer access cannot be fully enabled.
+[29d18h10m13s][HUGECTR][INFO]: Start all2all warmup
+[29d18h10m13s][HUGECTR][INFO]: End all2all warmup
+[29d18h10m13s][HUGECTR][INFO]: Use mixed precision: 0
+[29d18h10m13s][HUGECTR][INFO]: start create embedding for inference
+[29d18h10m13s][HUGECTR][INFO]: sparse_input name data1
+[29d18h10m13s][HUGECTR][INFO]: create embedding for inference success
+[29d18h10m13s][HUGECTR][INFO]: Inference stage skip BinaryCrossEntropyLoss layer, replaced by Sigmoid layer
+I1029 18:10:13.643871 2271 hugectr.cc:1007] ******Loading HugeCTR model successfully
+I1029 18:10:13.644003 2271 python.cc:1875] TRITONBACKEND_ModelInstanceInitialize: deepfm_nvt_0 (CPU device 0)
+I1029 18:10:13.644408 2271 model_repository_manager.cc:1183] successfully loaded 'deepfm' version 1
+I1029 18:11:23.684754 2271 model_repository_manager.cc:1183] successfully loaded 'deepfm_nvt' version 1
+I1029 18:11:23.685851 2271 model_repository_manager.cc:1022] loading: deepfm_ens:1
+I1029 18:11:23.787203 2271 model_repository_manager.cc:1183] successfully loaded 'deepfm_ens' version 1
+I1029 18:11:23.787495 2271 server.cc:522] 
++------------------+------+
+| Repository Agent | Path |
++------------------+------+
++------------------+------+
+
+I1029 18:11:23.787587 2271 server.cc:549] 
++---------+---------------------------------------------------------+--------------------------------------+
+| Backend | Path                                                    | Config                               |
++---------+---------------------------------------------------------+--------------------------------------+
+| hugectr | /opt/tritonserver/backends/hugectr/libtriton_hugectr.so | {"cmdline":{"ps":"/models/ps.json"}} |
+| python  | /opt/tritonserver/backends/python/libtriton_python.so   | {}                                   |
++---------+---------------------------------------------------------+--------------------------------------+
+
+I1029 18:11:23.787678 2271 server.cc:592] 
++------------+---------+--------+
+| Model      | Version | Status |
++------------+---------+--------+
+| deepfm     | 1       | READY  |
+| deepfm_ens | 1       | READY  |
+| deepfm_nvt | 1       | READY  |
++------------+---------+--------+
+
+I1029 18:11:23.787821 2271 tritonserver.cc:1920] 
++----------------------------------+----------------------------------------------------------------------------------+
+| Option                           | Value                                                                            |
++----------------------------------+----------------------------------------------------------------------------------+
+| server_id                        | triton                                                                           |
+| server_version                   | 2.15.0                                                                           |
+| server_extensions                | classification sequence model_repository model_repository(unload_dependents) sch |
+|                                  | edule_policy model_configuration system_shared_memory cuda_shared_memory binary_ |
+|                                  | tensor_data statistics                                                           |
+| model_repository_path[0]         | /models                                                                          |
+| model_control_mode               | MODE_NONE                                                                        |
+| strict_model_config              | 1                                                                                |
+| rate_limit                       | OFF                                                                              |
+| pinned_memory_pool_byte_size     | 268435456                                                                        |
+| cuda_memory_pool_byte_size{0}    | 67108864                                                                         |
+| cuda_memory_pool_byte_size{1}    | 67108864                                                                         |
+| response_cache_byte_size         | 0                                                                                |
+| min_supported_compute_capability | 6.0                                                                              |
+| strict_readiness                 | 1                                                                                |
+| exit_timeout                     | 30                                                                               |
++----------------------------------+----------------------------------------------------------------------------------+
+
+I1029 18:11:23.790565 2271 grpc_server.cc:4117] Started GRPCInferenceService at 0.0.0.0:8001
+I1029 18:11:23.791220 2271 http_server.cc:2815] Started HTTPService at 0.0.0.0:8000
+I1029 18:11:23.834696 2271 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002
+
