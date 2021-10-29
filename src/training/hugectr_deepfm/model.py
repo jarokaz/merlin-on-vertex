@@ -31,6 +31,7 @@ def create_model(
     workspace_size_per_gpu: float=61,
     num_dense_features: int=13,
     num_sparse_features: int=26,
+    nnz_per_slot: int=2,
     num_workers: int=12,
     repeat_dataset: bool=True,
 ):
@@ -51,21 +52,21 @@ def create_model(
                                       check_type=hugectr.Check_t.Non,
                                       num_workers=num_workers)
 
-    #optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.Adam,
-    #                                    update_type=hugectr.Update_t.Global,
-    #                                    beta1=0.9,
-    #                                    beta2=0.999,
-    #                                    epsilon=0.0000001)
+    optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.Adam,
+                                        update_type=hugectr.Update_t.Global,
+                                        beta1=0.9,
+                                        beta2=0.999,
+                                        epsilon=0.0000001)
     
-    optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.SGD,
-                                        update_type=hugectr.Update_t.Global)
+    #optimizer = hugectr.CreateOptimizer(optimizer_type=hugectr.Optimizer_t.SGD,
+    #                                    update_type=hugectr.Update_t.Global)
 
     model = hugectr.Model(solver, reader, optimizer)
 
     model.add(hugectr.Input(label_dim = 1, label_name = "label",
                         dense_dim = num_dense_features, dense_name = "dense",
                         data_reader_sparse_param_array = 
-                        [hugectr.DataReaderSparseParam("data1", 2, False, num_sparse_features)]))
+                        [hugectr.DataReaderSparseParam("data1", nnz_per_slot, False, num_sparse_features)]))
 
     model.add(hugectr.SparseEmbedding(embedding_type = hugectr.Embedding_t.LocalizedSlotSparseEmbeddingHash, 
                                      workspace_size_per_gpu_in_mb = workspace_size_per_gpu,
@@ -187,7 +188,7 @@ def create_model(
 
     model.add(hugectr.DenseLayer(layer_type = hugectr.Layer_t.Add,
                                 bottom_names = ["fc4", "reducesum1", "reducesum2"],
-                                top_names = ["add"]))                                                                                                        
+                                top_names = ["add"]))                                                                                                       
 
     model.add(hugectr.DenseLayer(layer_type = hugectr.Layer_t.BinaryCrossEntropyLoss,
                                 bottom_names = ["add", "label"],

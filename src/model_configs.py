@@ -38,12 +38,13 @@ def _label_columns():
 
 
 @dataclass
-class FeatureSpecs:
+class ModelSpecs:
     '''This class contains configurations specific to the Criteo dataset.'''
     
     num_slots: int  = 26
     max_nnz: int = 2
     num_outputs: int = 1
+    embedding_vector_size = 11
     dtypes: dict = field(default_factory=_get_criteo_col_dtypes)
     categorical_columns: list = field(default_factory=_categorical_columns)
     continuous_columns: list = field(default_factory=_numerical_columns)

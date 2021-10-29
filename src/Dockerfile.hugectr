@@ -3,8 +3,7 @@
 FROM gcr.io/merlin-on-gcp/dongm-merlin-train-hugectr:latest
 
 RUN pip install cloudml-hypertune
-RUN pip install google-cloud-aiplatform
 
 WORKDIR /src
 
-COPY training/hugectr/ ./
+COPY src/training/hugectr/ ./

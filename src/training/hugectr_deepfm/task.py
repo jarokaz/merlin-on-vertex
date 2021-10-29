@@ -24,13 +24,11 @@ import shutil
 import hugectr
 
 from hugectr.inference import InferenceParams, CreateInferenceSession
-from model import create_model
-import utils
+from hugectr_deepfm.model import create_model
+from hugectr_deepfm import utils
 
 MODEL_PREFIX = 'deepfm'
 SNAPSHOT_DIR = 'snapshots'
-GRAPH_DIR = 'graph'
-MODEL_PARAMETERS_DIR = 'parameters'
 HYPERTUNE_METRIC_NAME = 'AUC'
 
 LOCAL_MODEL_DIR = '/tmp/saved_model'
@@ -52,24 +50,12 @@ def set_job_dirs():
 
 def save_model(model, model_dir):
     """Saves model graph and model parameters."""
-    
-    graph_path = os.path.join(model_dir, GRAPH_DIR)
-    parameters_path = os.path.join(model_dir, MODEL_PARAMETERS_DIR)
-                                   
-    if os.path.isdir(graph_path):
-        shutil.rmtree(graph_path)
-    os.makedirs(graph_path)
-    
-    if os.path.isdir(parameters_path):
-        shutil.rmtree(parameters_path)
-    os.makedirs(parameters_path)
                      
-    graph_path = os.path.join(graph_path, f'{MODEL_PREFIX}.json')
+    graph_path = os.path.join(model_dir, f'{MODEL_PREFIX}.json')
     logging.info('Saving model graph to: {}'.format(graph_path))  
-    
     model.graph_to_json(graph_config_file=graph_path)
    
-    parameters_path = os.path.join(parameters_path, MODEL_PREFIX)
+    parameters_path = os.path.join(model_dir, MODEL_PREFIX)
     logging.info('Saving model parameters to: {}'.format(parameters_path)) 
     model.save_params_to_files(prefix=parameters_path)
     
@@ -87,8 +73,8 @@ def evaluate_model(
     i64_input_key=True):
     """Evaluates a model on a validation dataset."""
     
-    dense_model_file = os.path.join(model_dir, MODEL_PARAMETERS_DIR, f'{MODEL_PREFIX}_dense_0.model')
-    sparse_model_files = [os.path.join(model_dir, MODEL_PARAMETERS_DIR, f'{MODEL_PREFIX}0_sparse_0.model')]
+    dense_model_file = os.path.join(model_dir, f'{MODEL_PREFIX}_dense_0.model')
+    sparse_model_files = [os.path.join(model_dir, f'{MODEL_PREFIX}0_sparse_0.model')]
     
     inference_params = InferenceParams(model_name=MODEL_PREFIX,
                                        max_batchsize=max_batchsize,
@@ -100,7 +86,7 @@ def evaluate_model(
                                        cache_size_percentage=cache_size_percentage,
                                        i64_input_key=i64_input_key)
     
-    model_config_path = os.path.join(model_dir, GRAPH_DIR, f'{MODEL_PREFIX}.json')
+    model_config_path = os.path.join(model_dir, f'{MODEL_PREFIX}.json')
     inference_session = CreateInferenceSession(model_config_path=model_config_path, 
                                                inference_params=inference_params)
     
@@ -119,8 +105,8 @@ def main(args):
 
     repeat_dataset = False if args.num_epochs > 0 else True
     model_dir, snapshot_dir = set_job_dirs()
-    num_gpus = len(args.gpus)
-    batch_size = num_gpus * args.per_gpu_batch_size if args.num_gpus  else args.per_gpu_batch_size 
+    num_gpus = sum([len(gpus) for gpus in args.gpus])
+    batch_size = num_gpus * args.per_gpu_batch_size 
     
     model = create_model(train_data=[args.train_data],
                          valid_data=args.valid_data,
@@ -130,6 +116,7 @@ def main(args):
                          num_sparse_features=args.num_sparse_features,
                          num_workers=args.num_workers,
                          slot_size_array=args.slot_size_array,
+                         nnz_per_slot=args.nnz_per_slot,
                          batchsize=batch_size,
                          lr=args.lr,
                          gpus=args.gpus,
@@ -151,8 +138,9 @@ def main(args):
     logging.info('Starting model evaluation using {} batches ...'.format(args.eval_batches))
     metric_value = evaluate_model(model_dir=model_dir, 
                          eval_data_source=args.valid_data,
-                         num_batches=args.eval_batches,         
-                         max_batchsize=args.batchsize,
+                         num_batches=args.eval_batches,
+                         device_id=0,
+                         max_batchsize=args.per_gpu_batch_size,
                          slot_size_array=args.slot_size_array)
     logging.info('{} on the evaluation dataset: {}'.format(HYPERTUNE_METRIC_NAME, metric_value))
     
@@ -199,6 +187,11 @@ def parse_args():
                         required=False,
                         default=26,
                         help='Number of sparse features')
+    parser.add_argument('--nnz_per_slot',
+                        type=int,
+                        required=False,
+                        default=2,
+                        help='NNZ per slot')
     parser.add_argument('--lr',
                         type=float,
                         required=False,

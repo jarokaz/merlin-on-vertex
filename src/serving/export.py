@@ -21,13 +21,6 @@ from nvtabular.inference.triton import export_hugectr_ensemble
 from pathlib import Path
 
 
-NUM_SLOTS = 26
-MAX_NNZ = 2
-NUM_OUTPUTS = 1
-EMBEDDING_VECTOR_SIZE = 11
-MAX_BATCH_SIZE = 64
-
-MODEL_PREFIX = 'deepfm'
 MODEL_REGISTRY_PATH = "/models"
 HUGECTR_CONFIG_FILENAME = "ps.json"
 
@@ -61,42 +54,49 @@ def create_hugectr_backend_config(
     
 
 def export_ensemble(
+    model_name,
     workflow_path,
     saved_model_path,
     output_path,
     categorical_columns,
     continuous_columns,
-    label_columns):
+    label_columns,
+    num_slots,
+    max_nnz,
+    num_outputs,
+    embedding_vector_size,
+    max_batch_size
+):
           
     workflow = nvt.Workflow.load(workflow_path)
     
     hugectr_params = dict()
-    graph_filename = f'{MODEL_PREFIX}.json'
+    graph_filename = f'{model_name}.json'
     hugectr_params["config"] = os.path.join(
         MODEL_REGISTRY_PATH,
-        MODEL_PREFIX,
+        model_name,
         "1",
         graph_filename)
     
-    hugectr_params["slots"] = NUM_SLOTS
-    hugectr_params["max_nnz"] = MAX_NNZ
-    hugectr_params["embedding_vector_size"] = EMBEDDING_VECTOR_SIZE
-    hugectr_params["n_outputs"] = NUM_OUTPUTS
+    hugectr_params["slots"] = num_slots
+    hugectr_params["max_nnz"] = max_nnz
+    hugectr_params["embedding_vector_size"] = embedding_vector_size
+    hugectr_params["n_outputs"] = num_outputs
     
     export_hugectr_ensemble(
         workflow=workflow,
         hugectr_model_path=saved_model_path,
         hugectr_params=hugectr_params,
-        name=MODEL_PREFIX,
+        name=model_name,
         output_path=output_path,
         label_columns=label_columns,
         cats=categorical_columns,
         conts=continuous_columns,
-        max_batch_size=MAX_BATCH_SIZE,
+        max_batch_size=max_batch_size,
     )
     
     hugectr_backend_config = create_hugectr_backend_config(
-        model_path=os.path.join(output_path, MODEL_PREFIX, '1'))
+        model_path=os.path.join(output_path, model_name, '1'))
     
     with open(os.path.join(output_path, HUGECTR_CONFIG_FILENAME), 'w') as f:
         json.dump(hugectr_backend_config, f)
