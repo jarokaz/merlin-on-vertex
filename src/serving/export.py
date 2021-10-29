@@ -20,6 +20,11 @@ from nvtabular.inference.triton import export_hugectr_ensemble
 
 from pathlib import Path
 
+# Temporary fix to https://github.com/NVIDIA-Merlin/NVTabular/issues/1221
+
+import nvtabular.inference.triton.model_config_pb2 as model_config
+from google.protobuf import text_format
+
 
 HUGECTR_CONFIG_FILENAME = "ps.json"
 
@@ -102,6 +107,20 @@ def export_ensemble(
     
     with open(os.path.join(output_path, HUGECTR_CONFIG_FILENAME), 'w') as f:
         json.dump(hugectr_backend_config, f)
+        
+        
+    # Temporary fix to https://github.com/NVIDIA-Merlin/NVTabular/issues/1221
+    nvt_protobuf_path = os.path.join(output_path, f'{model_name}_nvt', 'config.pbtxt')
+    with open(nvt_protobuf_path, 'r') as f:
+        nvt_config_pbtxt = f.read()
+    nvt_config = model_config.ModelConfig()
+    nvt_config = text_format.Parse(nvt_config_pbtxt, nvt_config)
+    #nvt_config.instance_group[0].kind = 1
+    nvt_config.ClearField('instance_group')
+    with open(nvt_protobuf_path, 'w') as f:
+        text_format.PrintMessage(nvt_config, f)
+    
+    
     
 
     
