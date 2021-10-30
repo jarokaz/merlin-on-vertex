@@ -31,20 +31,20 @@ HUGECTR_CONFIG_FILENAME = "ps.json"
 
 def create_hugectr_backend_config(
     model_path,
-    model_registry_path='/models'):
+    model_repository_path='/models'):
     
     p = Path(model_path)
     model_version = p.parts[-1]
     model_name = p.parts[-2]
-    model_path_in_registry = os.path.join(model_registry_path, model_name, model_version)
+    model_path_in_repository = os.path.join(model_repository_path, model_name, model_version)
     
     dense_pattern=f'{model_name}_dense_*.model'
-    dense_path = [os.path.join(model_path_in_registry, path.name) 
+    dense_path = [os.path.join(model_path_in_repository, path.name) 
                   for path in p.glob(dense_pattern)][0]
     sparse_pattern=f'{model_name}[0-9]_sparse_*.model'
-    sparse_paths = [os.path.join(model_path_in_registry, path.name) 
+    sparse_paths = [os.path.join(model_path_in_repository, path.name) 
                     for path in p.glob(sparse_pattern)]   
-    network_file = os.path.join(model_path_in_registry, f'{model_name}.json')
+    network_file = os.path.join(model_path_in_repository, f'{model_name}.json')
 
     config_dict = dict()
     config_dict['supportlonglong'] = True
@@ -71,7 +71,7 @@ def export_ensemble(
     num_outputs,
     embedding_vector_size,
     max_batch_size,
-    model_registry_path='/models'
+    model_repository_path='/models'
 ):
           
     workflow = nvt.Workflow.load(workflow_path)
@@ -79,7 +79,7 @@ def export_ensemble(
     hugectr_params = dict()
     graph_filename = f'{model_name}.json'
     hugectr_params["config"] = os.path.join(
-        model_registry_path,
+        model_repository_path,
         model_name,
         "1",
         graph_filename)
@@ -103,7 +103,7 @@ def export_ensemble(
     
     hugectr_backend_config = create_hugectr_backend_config(
         model_path=os.path.join(output_path, model_name, '1'),
-        model_registry_path=model_registry_path)
+        model_repository_path=model_repository_path)
     
     with open(os.path.join(output_path, HUGECTR_CONFIG_FILENAME), 'w') as f:
         json.dump(hugectr_backend_config, f)
