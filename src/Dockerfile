@@ -8,7 +8,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 
 WORKDIR /src
 
-COPY src/serving/entrypoint.sh ./
+COPY serving/entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["./entrypoint.sh"]
