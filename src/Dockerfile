@@ -1,9 +1,14 @@
-# Latest version provided by NVIDIA (10/28/2021)
-# Still Failing: NVTabular with T4 GPUs
-FROM nvcr.io/nvidia/merlin/merlin-training:21.09
+FROM gcr.io/merlin-on-gcp/dongm-merlin-inference-hugectr:latest
 
-RUN pip install cloudml-hypertune
+EXPOSE 8000
+EXPOSE 8001
+EXPOSE 8002
+
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && apt-get update -y && apt-get install google-cloud-sdk -y
 
 WORKDIR /src
 
-COPY training/hugectr/* ./
+COPY serving/entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+
+ENTRYPOINT ["./entrypoint.sh"]
