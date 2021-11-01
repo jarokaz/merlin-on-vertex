@@ -37,6 +37,7 @@ def convert_csv_to_parquet_op(
     data_paths: list,
     split: str,
     sep: str,
+    num_output_files: int,
     n_workers: int,
     shuffle: Optional[str] = None,
     recursive: Optional[bool] = False,
@@ -108,7 +109,12 @@ def convert_csv_to_parquet_op(
     fuse_output_dir = os.path.join(output_dataset.path, split)
     
     logging.info(f'Writing parquet file(s) to {fuse_output_dir}')
-    etl.convert_csv_to_parquet(fuse_output_dir, dataset, shuffle)
+    etl.convert_csv_to_parquet(
+        output_path=fuse_output_dir,
+        dataset=dataset, 
+        output_files=num_output_files, 
+        shuffle=shuffle
+    )
 
     # Write metadata
     output_dataset.metadata['split'] = split

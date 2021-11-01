@@ -27,6 +27,8 @@ def preprocessing_csv(
     train_paths: list,
     valid_paths: list,
     sep: str,
+    num_output_files_train: int,
+    num_output_files_valid: int,
     shuffle: str
 ):
     # ==================== Convert from CSV to Parquet ========================
@@ -36,7 +38,8 @@ def preprocessing_csv(
         data_paths=train_paths,
         split='train',
         sep=sep,
-        n_workers=int(config.GPU_LIMIT)
+        n_workers=int(config.GPU_LIMIT),
+        num_output_files=num_output_files_train
     )
     csv_to_parquet_train.set_cpu_limit(config.CPU_LIMIT)
     csv_to_parquet_train.set_memory_limit(config.MEMORY_LIMIT)
@@ -48,7 +51,8 @@ def preprocessing_csv(
         data_paths=valid_paths,
         split='valid',
         sep=sep,
-        n_workers=int(config.GPU_LIMIT)
+        n_workers=int(config.GPU_LIMIT),
+        num_output_files=num_output_files_valid
     )
     csv_to_parquet_valid.set_cpu_limit(config.CPU_LIMIT)
     csv_to_parquet_valid.set_memory_limit(config.MEMORY_LIMIT)

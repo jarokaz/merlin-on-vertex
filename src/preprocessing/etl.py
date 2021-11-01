@@ -79,6 +79,7 @@ def create_csv_dataset(
 def convert_csv_to_parquet(
     output_path,
     dataset,
+    output_files,
     shuffle = None
 ):
     '''Convert CSV file to parquet and write to GCS'''
@@ -87,8 +88,9 @@ def convert_csv_to_parquet(
 
     dataset.to_parquet(
         output_path,
-        preserve_files=True,
-        shuffle=shuffle
+        # preserve_files=True,
+        shuffle=shuffle,
+        output_files=output_files
     )
 
 
