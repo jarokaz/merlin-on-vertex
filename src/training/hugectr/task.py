@@ -27,7 +27,6 @@ from hugectr.inference import InferenceParams, CreateInferenceSession
 from model import create_model
 import utils
 
-MODEL_PREFIX = 'deepfm'
 SNAPSHOT_DIR = 'snapshots'
 HYPERTUNE_METRIC_NAME = 'AUC'
 
@@ -48,19 +47,20 @@ def set_job_dirs():
     return model_dir, checkpoint_dir
 
 
-def save_model(model, model_dir):
+def save_model(model, model_name, model_dir):
     """Saves model graph and model parameters."""
                      
-    parameters_path = os.path.join(model_dir, MODEL_PREFIX)
+    parameters_path = os.path.join(model_dir, model_name)
     logging.info('Saving model parameters to: {}'.format(parameters_path)) 
     model.save_params_to_files(prefix=parameters_path)
     
-    graph_path = os.path.join(model_dir, f'{MODEL_PREFIX}.json')
+    graph_path = os.path.join(model_dir, f'{model_name}.json')
     logging.info('Saving model graph to: {}'.format(graph_path))  
     model.graph_to_json(graph_config_file=graph_path)
     
 
 def evaluate_model(
+    model_name,
     model_dir, 
     eval_data_source,
     num_batches,
@@ -73,10 +73,10 @@ def evaluate_model(
     i64_input_key=True):
     """Evaluates a model on a validation dataset."""
     
-    dense_model_file = os.path.join(model_dir, f'{MODEL_PREFIX}_dense_0.model')
-    sparse_model_files = [os.path.join(model_dir, f'{MODEL_PREFIX}0_sparse_0.model')]
+    dense_model_file = os.path.join(model_dir, f'{model_name}_dense_0.model')
+    sparse_model_files = [os.path.join(model_dir, f'{model_name}0_sparse_0.model')]
     
-    inference_params = InferenceParams(model_name=MODEL_PREFIX,
+    inference_params = InferenceParams(model_name=model_name,
                                        max_batchsize=max_batchsize,
                                        hit_rate_threshold=hit_rate_threshold,
                                        dense_model_file=dense_model_file,
@@ -86,7 +86,7 @@ def evaluate_model(
                                        cache_size_percentage=cache_size_percentage,
                                        i64_input_key=i64_input_key)
     
-    model_config_path = os.path.join(model_dir, f'{MODEL_PREFIX}.json')
+    model_config_path = os.path.join(model_dir, f'{model_name}.json')
     inference_session = CreateInferenceSession(model_config_path=model_config_path, 
                                                inference_params=inference_params)
     
@@ -130,18 +130,19 @@ def main(args):
               display=args.display_interval, 
               eval_interval=args.eval_interval, 
               snapshot=args.snapshot_interval, 
-              snapshot_prefix=os.path.join(snapshot_dir, MODEL_PREFIX))
+              snapshot_prefix=os.path.join(snapshot_dir, args.model_name))
     
     logging.info('Saving model')
-    save_model(model, model_dir)
+    save_model(model, args.model_name, model_dir)
     
     logging.info('Starting model evaluation using {} batches ...'.format(args.eval_batches))
-    metric_value = evaluate_model(model_dir=model_dir, 
-                         eval_data_source=args.valid_data,
-                         num_batches=args.eval_batches,
-                         device_id=0,
-                         max_batchsize=args.per_gpu_batch_size,
-                         slot_size_array=args.slot_size_array)
+    metric_value = evaluate_model(model_name=args.model_name,
+                                  model_dir=model_dir, 
+                                  eval_data_source=args.valid_data,
+                                  num_batches=args.eval_batches,
+                                  device_id=0,
+                                  max_batchsize=args.per_gpu_batch_size,
+                                  slot_size_array=args.slot_size_array)
     logging.info('{} on the evaluation dataset: {}'.format(HYPERTUNE_METRIC_NAME, metric_value))
     
     # Report AUC to Vertex hypertuner
@@ -158,6 +159,11 @@ def parse_args():
     """Parses command line arguments."""
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--model_name',
+                        type=str,
+                        required=True,
+                        default="deepfm",
+                        help='Model Name.')
     parser.add_argument('-t',
                         '--train_data',
                         type=str,

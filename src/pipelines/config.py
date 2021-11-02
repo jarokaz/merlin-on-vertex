@@ -22,7 +22,8 @@ BUCKET = os.getenv("BUCKET", "")
 VERTEX_SA = os.getenv("VERTEX_SA", f'vertex-sa@{PROJECT_ID}.iam.gserviceaccount.com')
 
 VERSION = "v01"
-MODEL_DISPLAY_NAME = os.getenv("MODEL_DISPLAY_NAME", f"criteo-merlin-recommender-{VERSION}")
+MODEL_NAME = os.getenv("MODEL_NAME", "deepfm")
+MODEL_DISPLAY_NAME = os.getenv("MODEL_DISPLAY_NAME", f"criteo-hugectr-{MODEL_NAME}-{VERSION}")
 WORKSPACE = os.getenv("WORKSPACE", f'gs://{BUCKET}/{MODEL_DISPLAY_NAME}')
 
 BQ_DATASET_NAME = os.getenv("BQ_DATASET_NAME", "criteo")
@@ -33,8 +34,7 @@ BQ_VALID_TABLE_NAME = os.getenv("BQ_VALID_TABLE_NAME", "valid")
 PREPROCESS_CSV_PIPELINE_NAME = os.getenv("PREPROCESS_CSV_PIPELINE_NAME", "nvt-csv-pipeline")
 PREPROCESS_CSV_PIPELINE_ROOT = os.getenv(
     "PREPROCESS_CSV_PIPELINE_ROOT", os.path.join(WORKSPACE, PREPROCESS_CSV_PIPELINE_NAME))
-                               
-                               
+                                                             
 PREPROCESS_BQ_PIPELINE_NAME = os.getenv("PREPROCESS_BQ_PIPELINE_NAME", "nvt-bq-pipeline")
 PREPROCESS_BQ_PIPELINE_ROOT = os.getenv(
     "PREPROCESS_BQ_PIPELINE_ROOT", os.path.join(WORKSPACE, PREPROCESS_BQ_PIPELINE_NAME))
@@ -57,3 +57,9 @@ REPLICA_COUNT = os.getenv("REPLICA_COUNT", "1")
 ACCELERATOR_TYPE = os.getenv("ACCELERATOR_TYPE", "NVIDIA_TESLA_A100")
 ACCELERATOR_NUM = os.getenv("ACCELERATOR_NUM", "4")
 NUM_WORKERS = os.getenv("NUM_WORKERS", "4")
+
+NUM_SLOTS = os.getenv("NUM_SLOTS", "26")
+MAX_NNZ = os.getenv("MAX_NNZ", "2")
+EMBEDDING_VECTOR_SIZE = os.getenv("EMBEDDING_VECTOR_SIZE", "11")
+MAX_BATCH_SIZE = os.getenv("MAX_BATCH_SIZE", "64")
+MODEL_REPOSITORY_PATH = os.getenv("MODEL_REPOSITORY_PATH", "/models")

@@ -15,8 +15,6 @@
 import numpy as np
 from typing import Dict, Union
 
-from typing import Dict, Union
-
 def get_criteo_col_dtypes() -> Dict[str,Union[str, np.int32]]:
     '''Returns a dict mapping column names to numpy dtype.
     This function is specific to Criteo Dataset'''

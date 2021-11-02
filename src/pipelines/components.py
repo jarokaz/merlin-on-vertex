@@ -80,12 +80,12 @@ def convert_csv_to_parquet_op(
     import logging
     import os
     from preprocessing import etl
-    import configs
+    import feature_uitls
 
     logging.basicConfig(level=logging.INFO)
 
     logging.info('Getting column names and dtypes')
-    col_dtypes = configs._get_criteo_col_dtypes()
+    col_dtypes = feature_uitls.get_criteo_col_dtypes()
 
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
@@ -339,6 +339,7 @@ def train_hugectr_op(
     transformed_train_dataset: Input[Dataset],
     transformed_valid_dataset: Input[Dataset],
     model: Output[Model],
+    model_name: str,
     project: str,
     region: str,
     service_account: str,
@@ -393,6 +394,7 @@ def train_hugectr_op(
                 "command": ["python", "-m", "task"],
                 "args": [
                     f'--per_gpu_batch_size={per_gpu_batch_size}',
+                    f'--model_name={model_name}',
                     f'--train_data={train_data_fuse}', 
                     f'--valid_data={valid_data_fuse}',
                     f'--schema={schema_path}',
@@ -437,25 +439,34 @@ def train_hugectr_op(
 def export_triton_ensemble(
     model: Input[Model],
     workflow: Input[Artifact],
-    exported_model: Output[Model]
+    exported_model: Output[Model],
+    model_name: str,
+    num_slots: int,
+    max_nnz: int, 
+    embedding_vector_size: int, 
+    max_batch_size: int,
+    model_repository_path: str
 ):
   
     import logging
     from serving import export
-    import configs
-    
-    model_location_fuse = model.path.replace("gs://", "/gcs/")
-    workflow_location_fuse =  workflow.path.replace("gs://", "/gcs/")
-    output_location_fuse = exported_model.path.replace("gs://", "/gcs/")
+    import feature_utils
     
     logging.info('Exporting Triton ensemble model...')
     export.export_ensemble(
-        workflow_path=workflow_location_fuse,
-        saved_model_path=model_location_fuse,
-        output_path=output_location_fuse,
-        categotical_columns=configs.categotical_columns(),
-        continuous_columns=configs.continuous_columns(),
-        label_columns=configs.label_columns()
+        model_name=model_name,
+        workflow_path=workflow.path,
+        saved_model_path=model.path,
+        output_path=exported_model.path,
+        categorical_columns=feature_utils.categorical_columns(),
+        continuous_columns=feature_utils.continuous_columns(),
+        label_columns=feature_utils.label_columns(),
+        num_slots=num_slots,
+        max_nnz=num_slots,
+        num_outputs=max_nnz,
+        embedding_vector_size=embedding_vector_size,
+        max_batch_size=max_batch_size,
+        model_repository_path=model_repository_path
     )
     logging.info('Triton model exported.')
     

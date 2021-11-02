@@ -17,13 +17,6 @@ from . import components
 from kfp.v2 import dsl
 from . import config
 
-# https://github.com/kubeflow/pipelines/blob/master/sdk/python/kfp/v2/google/experimental/custom_job.py
-#from kfp.v2.google import experimental
-
-from google_cloud_pipeline_components import aiplatform as vertex_ai_components
-# https://github.com/kubeflow/pipelines/blob/master/components/google-cloud/google_cloud_pipeline_components/experimental/custom_job/custom_job.py
-from google_cloud_pipeline_components import experimental as gcp_experimental_components
-
 
 GKE_ACCELERATOR_KEY = 'cloud.google.com/gke-accelerator'
 
@@ -106,60 +99,11 @@ def training_bq(
     transform_valid_dataset.add_node_selector_constraint(GKE_ACCELERATOR_KEY, config.GPU_TYPE)
     
     # ==================== Train HugeCTR model ========================
-    
-    
-#     train_data = os.path.join(TRANSFORMED_OUTPUT_DIR, 'train/_file_list.txt')
-#     valid_data = os.path.join(TRANSFORMED_OUTPUT_DIR, 'valid/_file_list.txt')
-    
-#     worker_pool_specs =  [
-#         {
-#             "machine_spec": {
-#                 "machine_type": config.MACHINE_TYPE,
-#                 "accelerator_type": config.ACCELERATOR_TYPE,
-#                 "accelerator_count": config.ACCELERATOR_NUM,
-#             },
-#             "replica_count": 1,
-#             "container_spec": {
-#                 "image_uri": config.HUGECTR_IMAGE_URI,
-#                 "command": ["python", "-m", "trainer.task"],
-#                 "args": [
-#                     f'--per_gpu_batch_size={per_gpu_batch_size}',
-#                     f'--train_data={train_data.replace("gs://", "/gcs/")}', 
-#                     f'--valid_data={valid_data.replace("gs://", "/gcs/")}',
-#                     f'--slot_size_array={SLOT_SIZE_ARRAY}',
-#                     f'--max_iter={MAX_ITERATIONS}',
-#                     f'--max_eval_batches={EVAL_BATCHES}',
-#                     f'--eval_batches={EVAL_BATCHES_FINAL}',
-#                     f'--dropout_rate={DROPOUT_RATE}',
-#                     f'--lr={LR}',
-#                     f'--num_workers={NUM_WORKERS}',
-#                     f'--num_epochs={NUM_EPOCHS}',
-#                     f'--eval_interval={EVAL_INTERVAL}',
-#                     f'--snapshot={SNAPSHOT_INTERVAL}',
-#                     f'--display_interval={DISPLAY_INTERVAL}',
-#                     f'--gpus={gpus}',
-#                 ],
-#             },
-#         }
-#     ]
-    
-#     train_model = gcp_experimental_components.custom_training_job_op(
-#         component_spec=print_op(),
-#         display_name=f'train-{MODEL_DISPLAY_NAME}',
-#         replica_count=int(config.REPLICA_COUNT),
-#         machine_type=config.MACHINE_TYPE,
-#         accelerator_type=config.ACCELERATOR_TYPE,
-#         accelerator_count=int(config.ACCELERATOR_NUM),
-#         worker_pool_specs=None,
-#         base_output_directory="",
-#         service_account="",
-#    )
-
-
 
     train_hugectr = components.train_hugectr_op(
         transformed_train_dataset=transform_train_dataset.outputs['output_dataset'],
         transformed_valid_dataset=transform_valid_dataset.outputs['output_dataset'],
+        model_name=config.MODEL_NAME, 
         project=config.PROJECT,
         region=config.REGION,
         service_account=config.VERTEX_SA,
@@ -186,20 +130,16 @@ def training_bq(
     triton_ensemble = components.export_triton_ensemble(
         model=train_hugectr.outputs['model'],
         workflow=analyze_dataset.outputs['workflow'],
-    )
+        model_name=config.MODEL_NAME,
+        num_slots=int(config.NUM_SLOTS),
+        max_nnz=int(config.MAX_NNZ), 
+        embedding_vector_size=int(config.EMBEDDING_VECTOR_SIZE), 
+        max_batch_size=int(config.MAX_BATCH_SIZE),
+        model_repository_path=config.MODEL_REPOSITORY_PATH
+    ):
     
     # ==================== Upload to Vertex Models ======================
-    
-    
-    # model_upload_op = vertex_ai_components.ModelUploadOp(
-    #     project=config.PROJECT_ID,
-    #     display_name=config.MODEL_DISPLAY_NAME,
-    #     artifact_uri=triton_ensemble.outputs['exported_model'], # this will not work!
-    #     serving_container_image_uri=serving_container_image_uri,
-    #     serving_container_environment_variables={"NOT_USED": "NO_VALUE"},
-    # )
-    
-    
+
     upload_model = components.upload_vertex_model(
         project=config.PROJECT_ID,
         region=config.REGION,
