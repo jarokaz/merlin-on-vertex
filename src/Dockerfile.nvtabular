@@ -8,6 +8,6 @@ RUN pip install google-cloud-aiplatform kfp
 
 COPY ./preprocessing ./preprocessing
 COPY setup.py .
-COPY configs.py .
+COPY feature_utils.py .
 
 RUN pip install .
