@@ -80,12 +80,12 @@ def convert_csv_to_parquet_op(
     import logging
     import os
     from preprocessing import etl
-    import feature_uitls
+    import feature_utils
 
     logging.basicConfig(level=logging.INFO)
 
     logging.info('Getting column names and dtypes')
-    col_dtypes = feature_uitls.get_criteo_col_dtypes()
+    col_dtypes = feature_utils.get_criteo_col_dtypes()
 
     # Create Dask cluster
     logging.info('Creating Dask cluster.')
