@@ -34,15 +34,15 @@ In this repo we demonstrate how to operationalize NVTabular data preprocessing w
 
 The first pipeline demonstrates how to process large CSV datasets managed in [Google Cloud Storage](https://cloud.google.com/storage). The second pipeline digests source data from [Google BigQuery](https://www.google.com/search?q=bigquery&oq=bigquery&aqs=chrome..69i57j0i512l9.1610j0j15&sourceid=chrome&ie=UTF-8)
 
-The source code for the data preprocessing, model training, and model inference is provided in [src](src) directory. However, we provide the following notebook 
-to drive the execution of the of different steps of the system:
-
 ### Training large-scale deep learning recommender models
 
 [NVIDIA HugeCTR](https://github.com/NVIDIA-Merlin/HugeCTR) is NVIDIA's GPU-accelerated, highly scalable recommender framework. NVIDIA HugeCTR facilitates highly scalable implementations of leading deep learning recommender models including [Google's Wide and Deep](https://arxiv.org/abs/1606.07792), [Facebook's DLRM](https://arxiv.org/abs/1703.04247) and the [DeepFM model](https://arxiv.org/abs/1703.04247) used as an example in this repo.
 
 The repo includes an example of how to operationalize training and hypertuning of a HugeCTR model using [Vertex AI Training](https://cloud.google.com/vertex-ai/docs/training/custom-training) and massively scalable [A2 workers](https://cloud.google.com/blog/products/compute/a2-vms-with-nvidia-a100-gpus-are-ga).
 
+### Deploying and serving deep learning ranking inference pipelines 
+
+[NVIDIA Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server) is a cloud and edge inferencing solution optimized for both CPUs and GPUs. Triton supports ensemble models that can be used to implement multi-step inference pipelines. The repo includes a sample that demonstrates how to create, deploy, and serve a Triton ensemble model using Vertex AI Prediction. The example ensemble implements the inference pipeline that integrates NVTabular data preprocessing workflow with a HugeCTR deep learning model. 
 
 
 ## Parking lot
