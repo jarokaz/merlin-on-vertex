@@ -82,7 +82,10 @@ The `src` folder also includes Dockerfiles for custom container images used by V
 
 ## Environment setup
 
+This section outlines the step to configure a GCP environment required to run the code samples in this repo.
+
 ### Enabling the required services
+
 From Cloud Shell, run the following `gcloud` command to enable the required Cloud APIs:
 ```
 PROJECT_ID=merlin-on-gcp
