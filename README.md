@@ -21,7 +21,7 @@ The dataset used by all samples in this repo is [Criteo 1TB Click Logs dataset](
 
 ## Architecture Overview
 
-The below figure summarizes high level architecture followed by the examples in this repo.
+The below figure summarizes high level architecture employed by the examples in this repo.
 
 ![NVIDIA Merlin](images/overview.png)
 
