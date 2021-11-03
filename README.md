@@ -69,7 +69,7 @@ Currently, the repo includes the following notebooks:
 2. [01-dataset-preprocessing](01-dataset-preprocessing.ipynb) - guidance for large scaled data preprocessing with NVTabular and Vertex Pipelines
 3. [02-model-training-hugectr](02-model-training-hugectr.ipynb) - guidance for training HugeCTR models with Vertex Training. 
 4. [03-model-inference-hugectr](03-model-inference-triton.ipynb) - guidance for deploying Trition ensemble models with Vertex Prediction
-5. [04-e2e-pipeline](04-e2e-pipeline.ipynb) - end-to-end data preprocessing, training, and deployment pipeline
+5. [04-e2e-pipeline](04-e2e-pipeline.ipynb) - guidance for building an end-to-end data preprocessing, training, and deployment pipeline
 
 The Python modules are in the `src` folder:
 - `src/pipelines` - pipeline and pipeline components definitions
