@@ -21,7 +21,7 @@ The dataset used by all samples in this repo is [Criteo 1TB Click Logs dataset](
 
 ## Architecture Overview
 
-The below figure summarizes high level architecture of the solution demonstrated in this repo.
+The below figure summarizes a high level architecture of the solution demonstrated in this repo.
 
 ![NVIDIA Merlin](images/overview.png)
 
@@ -59,17 +59,29 @@ A flexible and powerful experimentation and development environment is critical 
 The environment is based on [Vertex AI Workbench](https://cloud.google.com/vertex-ai/docs/workbench/introduction). NVIDIA NGC [Merlin training]() and [Merlin inference]() container images are installed as managed notebooks kernels augmenting the standard features of a managed notebook instance that include UI and programmatic interfaces to Google Cloud services.
 
 
-## Parking lot
+## Repository structure
 
-1. [00-dataset-management](00-dataset-management.ipynb) describes and explore the dataset used in our examples, and load it to BigQuery.
-2. [01-dataset-preprocessing](01-dataset-preprocessing.ipynb) shows how to use NVTabular to preprocess the CSV data on GCS, as well as BigQuery data, to Parquet files with Vertex AI. 
-3. [02-model-training-hugectr](02-model-training-hugectr.ipynb) shows how to train a HugeCTR model using Vertex AI. 
-4. [03-model-inference-hugectr](03-model-inference-triton.ipynb) shows how to use Triton Inference Server to serve the model on Vertex AI.
-5. [04-e2e-pipeline](04-e2e-pipeline.ipynb) shows how to deploy and run and end-to-end NVIDIA Merlin pipeline with Vertex AI.
-6.
+The core content of the repository comprises a series of Jupyter notebooks and a set of Python modules. The notebooks compile detailed guidance on implementing the  solution's components described at a high level in the previous section. The Python modules encapsulate reusable code components that are used in the notebooks and in Vertex AI jobs and pipelines. 
+
+Currently, the repo includes the following notebooks:
+
+1. [00-dataset-management](00-dataset-management.ipynb) - describes and explores the Criteo dataset, and loads it to BigQuery.
+2. [01-dataset-preprocessing](01-dataset-preprocessing.ipynb) - guidance for large scaled data preprocessing with NVTabular and Vertex Pipelines
+3. [02-model-training-hugectr](02-model-training-hugectr.ipynb) - guidance for training HugeCTR models with Vertex Training. 
+4. [03-model-inference-hugectr](03-model-inference-triton.ipynb) - guidance for deploying Trition ensemble models with Vertex Prediction
+5. [04-e2e-pipeline](04-e2e-pipeline.ipynb) - end-to-end data preprocessing, training, and deployment pipeline
+
+The Python modules are in the `src` folder:
+- `src/pipelines` - pipeline and pipeline components definitions
+- `src/preprocessing` - data preprocessing utility functions and classes
+- `src/serving` - deployment and serving utility functions and classes
+- `src/training` - model definitions and training loops
+
+The `src` folder also includes Dockerfiles for custom container images used by Vertex Pipelines, Vertex Training, and Vertex Prediction. Refer to the notebooks for more detailed information.
 
 
-## Getting started
+## Environment setup
+
 ### Enabling the required services
 From Cloud Shell, run the following `gcloud` command to enable the required Cloud APIs:
 ```
