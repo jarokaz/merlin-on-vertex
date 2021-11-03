@@ -14,6 +14,10 @@ The content is this repository centers around five core areas:
 
 We assume that users of this repository have practical experience with both *NVIDIA Merlin* and *Vertex AI*. If you are unfamiliar with some of the core concepts or technologies used in this repo we recommend referring to  [NVIDIA Merlin](https://developer.nvidia.com/nvidia-merlin) and [Vertex AI](https://cloud.google.com/vertex-ai) documentation. 
 
+The dataset used by all samples in this repo is [Criteo](https://ailab.criteo.com/download-criteo-1tb-click-logs-dataset/) provided by **The Criteo AI Lab**. Since downloading of the dataset from the Criteo's web site is time consuming we staged the original files in Google Cloud Storage (TBD).
+
+
+
 ## Architecture Overview
 
 The below figure summarizes high level architecture followed by the examples in this repo.
@@ -21,7 +25,11 @@ The below figure summarizes high level architecture followed by the examples in 
 ![NVIDIA Merlin](images/overview.png)
 
 
+### Large scale data preprocessing
 
+Commercial recommenders are trained on huge datasets, often several hundreds of terabytes in size. At this scale, data preprocessing steps often take much more time than training recommender machine learning models. [NVTabular](https://developer.nvidia.com/nvidia-merlin/nvtabular) - a core component of *Merlin* - is a feature engineering and preprocessing library designed to effectively manipulate terabytes of recommender system datasets and significantly reduce data preparation time. 
+
+In this repo we demonstrate how to operationalize NVTabular data preprocessing workflow using Vertex AI Pipelines and multi-GPU processing nodes. 
 
 ## Repository structure
 
