@@ -36,9 +36,9 @@ The first pipeline demonstrates how to process large CSV datasets managed in [Go
 
 ### Training large-scale deep learning recommender models
 
-[NVIDIA HugeCTR](https://github.com/NVIDIA-Merlin/HugeCTR) is NVIDIA's GPU-accelerated, highly scalable recommender framework. NVIDIA HugeCTR facilitates  implementations of leading deep learning recommender models including [Google's Wide and Deep](https://arxiv.org/abs/1606.07792), [Facebook's DLRM](https://arxiv.org/abs/1703.04247) and the [DeepFM model](https://arxiv.org/abs/1703.04247) used as an example in this repo.
+[NVIDIA HugeCTR](https://github.com/NVIDIA-Merlin/HugeCTR) is NVIDIA's GPU-accelerated, highly scalable recommender framework. NVIDIA HugeCTR facilitates  implementations of leading deep learning recommender models such as [Google's Wide and Deep](https://arxiv.org/abs/1606.07792) and, [Facebook's DLRM](https://arxiv.org/abs/1703.04247).
 
-The repo includes an example of how to operationalize training and hypertuning of a HugeCTR model using [Vertex AI Training](https://cloud.google.com/vertex-ai/docs/training/custom-training) and massively scalable [A2 workers](https://cloud.google.com/blog/products/compute/a2-vms-with-nvidia-a100-gpus-are-ga).
+The repo includes an example of how to operationalize training and hypertuning of the HugeCTR implementation of the [DeepFM](https://arxiv.org/abs/1703.04247) model using [Vertex AI Training](https://cloud.google.com/vertex-ai/docs/training/custom-training) and massively scalable [A2 workers](https://cloud.google.com/blog/products/compute/a2-vms-with-nvidia-a100-gpus-are-ga).
 
 ### Deploying and serving deep learning ranking inference pipelines 
 
