@@ -90,7 +90,7 @@ In the Google CLoud Console, on the project selector page, [select or create a G
 
 ### Enable the required services
 
-From Cloud Shell, run the following `gcloud` command to enable the required Cloud APIs:
+From [Cloud Shell](https://cloud.google.com/shell/docs/using-cloud-shell), run the following `gcloud` command to enable the required Cloud APIs:
 ```
 PROJECT_ID=<YOUR PROJECT ID>
 gcloud services enable \
