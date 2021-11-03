@@ -37,11 +37,15 @@ The first pipeline demonstrates how to process large CSV datasets managed in [Go
 The source code for the data preprocessing, model training, and model inference is provided in [src](src) directory. However, we provide the following notebook 
 to drive the execution of the of different steps of the system:
 
-### Training HugeCTR deep learning models
+### Training large-scale deep learning recommender models
 
-[NVIDIA HugeCTR](https://github.com/NVIDIA-Merlin/HugeCTR) is NVIDIA's GPU-accelerated, highly scalable recommender framework. NVIDIA HugeCTR facilitates highly scalable implementations of leading deep learning recommender models including [Google's Wide and Deep](https://arxiv.org/abs/1606.07792), [Facebook's DLRM(https://arxiv.org/abs/1703.04247) and the [DeepFM model](https://arxiv.org/abs/1703.04247) used as an example in this repo.
+[NVIDIA HugeCTR](https://github.com/NVIDIA-Merlin/HugeCTR) is NVIDIA's GPU-accelerated, highly scalable recommender framework. NVIDIA HugeCTR facilitates highly scalable implementations of leading deep learning recommender models including [Google's Wide and Deep](https://arxiv.org/abs/1606.07792), [Facebook's DLRM](https://arxiv.org/abs/1703.04247) and the [DeepFM model](https://arxiv.org/abs/1703.04247) used as an example in this repo.
+
+The repo includes an example of how to operationalize training and hypertuning of a HugeCTR model using [Vertex AI Training](https://cloud.google.com/vertex-ai/docs/training/custom-training) and massively scalable [A2 workers](https://cloud.google.com/blog/products/compute/a2-vms-with-nvidia-a100-gpus-are-ga).
 
 
+
+## Parking lot
 
 1. [00-dataset-management](00-dataset-management.ipynb) describes and explore the dataset used in our examples, and load it to BigQuery.
 2. [01-dataset-preprocessing](01-dataset-preprocessing.ipynb) shows how to use NVTabular to preprocess the CSV data on GCS, as well as BigQuery data, to Parquet files with Vertex AI. 
