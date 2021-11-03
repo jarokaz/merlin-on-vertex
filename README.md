@@ -110,6 +110,8 @@ gcloud services enable \
 
 The notebooks in the repo require access to a GCS bucket that is used for staging and managing ML artifacts created by the workflows implemented in the notebooks. The bucket should be in the same GCP region as the region you will use to run Vertex AI jobs and pipelines.
 
+From [Cloud Shell](https://cloud.google.com/shell/docs/using-cloud-shell), run the following command to create the bucket:
+
 ```
 REGION=<YOUR REGION>
 BUCKET_NAME=<YOUR BUCKET_NAME>
@@ -122,7 +124,7 @@ gsutil mb -l $REGION gs://$BUCKET_NAME
 
 To run the notebooks in this repo you will use a custom container image that will be configured as a Vertex AI Workbench managed notebooks kernel. The image is a based on the NVIDIA NGC Merlin training image augmented with additional packages required to interface with Vertex AI.
 
-From Cloud Shell
+From [Cloud Shell](https://cloud.google.com/shell/docs/using-cloud-shell), run the following command to create the container image:
 
 1. Get Dockerfile for the Merlin development image:
 ```
