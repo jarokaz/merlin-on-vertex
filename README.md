@@ -56,7 +56,7 @@ A flexible and powerful experimentation and development environment is critical 
 
 ![NVIDIA Merlin dev](images/dev-env.png)
 
-The environment is based on [Vertex AI Workbench](https://cloud.google.com/vertex-ai/docs/workbench/introduction). NVIDIA NGC [Merlin training]() and [Merlin inference]() container images are installed as managed notebooks kernels augmenting the standard features of a managed notebook instance that include UI and programmatic interfaces to Google Cloud services.
+The environment is based on [Vertex AI Workbench](https://cloud.google.com/vertex-ai/docs/workbench/introduction). Container images based on NVIDIA NGC [Merlin training]() and [Merlin inference]() images are installed as managed notebooks kernels augmenting the standard features of a managed notebook instance that include UI and programmatic interfaces to Google Cloud services.
 
 
 ## Repository structure
@@ -88,7 +88,7 @@ This section outlines the step to configure a GCP environment required to run th
 
 From Cloud Shell, run the following `gcloud` command to enable the required Cloud APIs:
 ```
-PROJECT_ID=merlin-on-gcp
+PROJECT_ID=<YOUR PROJECT ID>
 gcloud services enable \
     aiplatform.googleapis.com         \
     bigquery.googleapis.com           \
@@ -102,8 +102,22 @@ gcloud services enable \
     --project=${PROJECT_ID}
 ```
 
+### Creating a staging GCS bucket
 
-### Creating Merlin development container image
+The notebooks in the repo require access to a GCS bucket that is used for staging and managing ML artifacts created by the workflows implemented in the notebooks. The bucket should be in the same GCP region as the region you will use to run Vertex AI jobs and pipelines.
+
+```
+REGION=<YOUR REGION>
+BUCKET_NAME=<YOUR BUCKET_NAME>
+
+gsutil mb -l $REGION gs://$BUCKET_NAME
+
+```
+
+### Building Merlin development container image
+
+To run the notebooks in this repo you will use a custom container image that will be configured as a Vertex AI Workbench managed notebooks kernel. The image is a based on the NVIDIA NGC Merlin training image augmented with additional packages required to interface with Vertex AI.
+
 From Cloud Shell
 
 1. Get Dockerfile for the Merlin development image:
@@ -122,51 +136,24 @@ gcloud builds submit --timeout "2h" --tag ${IMAGE_URI} . --machine-type=e2-highc
 
 ### Creating and configuring an instance of Vertex Workbench managed notebook
 
+This section provides step for provisioning a Vertex AI Workbench managed notebook and configuring a custom kernel based on the image created in the previous step.
+
 1. Follow the instructions in the [Create a managed notebooks instance how-to guide](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance):
     * In the [Use custom Docker images settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-2) enter a name of the image you created in the previous step: `gcr.io/<your-project-id>/merlin-dev-vertex:latest`
     * In the [Configure hardware settings](https://cloud.google.com/vertex-ai/docs/workbench/managed/create-instance#expandable-3) select your GPU configuration. We recommend a machine with two `NVIDIA Tesla T4` or `NVIDIA Tesla A100` GPUs. 
 
-### Run the example
+### Install the samples
 After the Vertex Workbench managed notebook is created, peform the following steps:
 
 1. Click on the OPEN JUPYTERLAB link on the notebook instance.
 2. Click on the New Launcher button, then start a new terminal session.
 3. Clone the repository to your notebook instance:
     ```
-    git clone https://github.com/GoogleCloudPlatform/merlin-on-vertex.git
-    cd merlin-on-vertex
+    git clone https://github.com/GoogleCloudPlatform/nvidia-merlin-on-vertex-aigit
+    cd nvidia-merlin-on-vertex-ai
     ```
     
     
-    
- With the rapid growth in scale of industry datasets, Deep Learning (DL) recommender models have started to gain advantages over traditional methods. At the same time, the complexity of building such systems has grown to the point where special thought must be taken in both the preparation of the data and in the training methods used in order to avoid performance issues that can slow down the total training iteration time by orders of magnitude.
-
-The combination of more sophisticated models and rapid data growth has raised the bar for computational resources required for data preprocessing and training while also placing new burdens on production systems. The current challenges for training large-scale recommenders include:
-
-* **Huge datasets**: Commercial recommenders are trained on huge datasets, often several terabytes in scale. At this scale, data ETL and preprocessing steps often take much more time than training the DL model.
-* **Complex data preprocessing and feature engineering pipelines**: Datasets need to be preprocessed and transformed into a form relevant to be used with DL models and frameworks. In addition, feature engineering creates an extensive set of new features from existing ones, requiring multiple iterations to arrive at an optimal solution.
-* **Input bottleneck**: Data loading, if not well optimized, can be the slowest part of the training process, leading to under-utilization of high-throughput computing devices such as GPUs.
-* **Extensive repeated experimentation**: The whole data engineering, training, and evaluation process is generally repeated many times, requiring significant time and computational resources.
-
-To meet the computational demands for large-scale DL recommender systems training and inference, NVIDIA introduced Merlin, an application framework and ecosystem created to facilitate all phases of building a DL recommender system, accelerated on NVIDIA GPUs. NVIDIA Merlin includes the following components:
-
-1. [NVTabular](https://developer.nvidia.com/nvidia-merlin/nvtabular) - a feature engineering and preprocessing library designed to effectively manipulate terabytes of recommender system datasets and significantly reduce data preparation time.
-2. [HugeCTR](https://developer.nvidia.com/nvidia-merlin/hugectr) -  a deep neural network training framework designed for recommender systems. It provides distributed training with model-parallel embedding tables and data-parallel neural networks across multiple GPUs and nodes for maximum performance.
-3. [Triton](https://developer.nvidia.com/nvidia-triton-inference-server) - an inference server to serve model efficiently on GPUs by maximizing throughput with the right combination of latency and GPU utilization.
-
-In addition, you can use NVIDIA Merlin components when you are building your TensorFlow or PyTorch DL recommender models, by using NVTabular to preprocess your data, using NVTabular data loaders to feed the data to your model efficiently during training, and using Triton server to serve your trained model.
-
-![NVIDIA Merlin](images/nvidia-merlin.png)
-
-
-[Verex AI](https://cloud.google.com/vertex-ai) is Google Cloud's unified data science and ML platform to build, deploy, and operationalize custom AI systems at scale.
-Vertex AI provides a suite of managed service for MLOps processes, including experimentation, model training, model serving, metadata tracking, and model monitoring,
-as well as pipeline workflow orchestration. 
-
-This code repository shows how to use Vertex AI services to run the various components of NVIDIA Merlin framework: NVTabular, HugeCTR, and Triton, to build and deploy large scale DL recommender models on Google Cloud.
-
-![NVIDIA Merlin](images/vertexai_componentes.png)
-
 
 
 
