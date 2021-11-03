@@ -82,9 +82,13 @@ The `src` folder also includes Dockerfiles for custom container images used by V
 
 ## Environment setup
 
-This section outlines the steps to configure a GCP environment required to run the code samples in this repo.
+This section outlines the steps to configure a GCP environment required to run the code samples in this repo. 
 
-### Enabling the required services
+### Select a Google Cloud project
+
+In the Google CLoud Console, on the project selector page, [select or create a Google Cloud project](https://console.cloud.google.com/projectselector2/home/dashboard?_ga=2.77230869.1295546877.1635788229-285875547.1607983197&_gac=1.82770276.1635972813.Cj0KCQjw5oiMBhDtARIsAJi0qk2ZfY-XhuwG8p2raIfWLnuYahsUElT08GH1-tZa28e230L3XSfYewYaAlEMEALw_wcB).
+
+### Enable the required services
 
 From Cloud Shell, run the following `gcloud` command to enable the required Cloud APIs:
 ```
