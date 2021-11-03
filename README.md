@@ -50,9 +50,13 @@ The repo includes a sample that demonstrates how to create, deploy, and serve a 
 
 Design patterns and best practices outlined in the previous sections come together in the last component of the solution - a reference implementation the machine learning pipeline that integrates data preprocessing, training, and deployment into a unified end to end workflow.
 
-### Merling experimentation and development environment
+### Experimentation and development environment
+
+A flexible and powerful experimentation and development environment is critical in recommender system projects. In the environment setup section of this repo we outline steps to configure the environment depicted on the below figure. 
 
 ![NVIDIA Merlin dev](images/dev-env.png)
+
+The environment is based on [Vertex AI Workbench](https://cloud.google.com/vertex-ai/docs/workbench/introduction). NVIDIA NGC [Merlin training]() and [Merling inference]() container images are installed as managed notebooks kernels. 
 
 
 ## Parking lot
