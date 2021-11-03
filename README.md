@@ -56,7 +56,7 @@ A flexible and powerful experimentation and development environment is critical 
 
 ![NVIDIA Merlin dev](images/dev-env.png)
 
-The environment is based on [Vertex AI Workbench](https://cloud.google.com/vertex-ai/docs/workbench/introduction). NVIDIA NGC [Merlin training]() and [Merling inference]() container images are installed as managed notebooks kernels. 
+The environment is based on [Vertex AI Workbench](https://cloud.google.com/vertex-ai/docs/workbench/introduction). NVIDIA NGC [Merlin training]() and [Merlin inference]() container images are installed as managed notebooks kernels augmenting the standard features of a managed notebook instance that include UI and programmatic interfaces to Google Cloud services.
 
 
 ## Parking lot
