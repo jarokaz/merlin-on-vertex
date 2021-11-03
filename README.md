@@ -52,7 +52,7 @@ Design patterns and best practices outlined in the previous sections come togeth
 
 ### Merling experimentation and development environment
 
-
+![NVIDIA Merlin dev](images/dev-env.png)
 
 
 ## Parking lot
