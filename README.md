@@ -21,7 +21,7 @@ The dataset used by all samples in this repo is [Criteo 1TB Click Logs dataset](
 
 ## Architecture Overview
 
-The below figure summarizes high level architecture employed by the examples in this repo.
+The below figure summarizes high level architecture of the solution demonstrated in this repo.
 
 ![NVIDIA Merlin](images/overview.png)
 
@@ -42,7 +42,14 @@ The repo includes an example of how to operationalize training and hypertuning o
 
 ### Deploying and serving deep learning ranking inference pipelines 
 
-[NVIDIA Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server) is a cloud and edge inferencing solution optimized for both CPUs and GPUs. Triton supports ensemble models that can be used to implement multi-step inference pipelines. The repo includes a sample that demonstrates how to create, deploy, and serve a Triton ensemble model using Vertex AI Prediction. The example ensemble implements the inference pipeline that integrates NVTabular data preprocessing workflow with a HugeCTR deep learning model. 
+[NVIDIA Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server) is a cloud and edge inferencing solution optimized for both CPUs and GPUs. Triton supports ensemble models that can be used to implement multi-step inference pipelines. 
+
+The repo includes a sample that demonstrates how to create, deploy, and serve a Triton ensemble model using Vertex AI Prediction. The example ensemble implements an inference pipeline that integrates NVTabular data preprocessing workflow with a HugeCTR deep learning model. 
+
+### End to end MLOps workflow
+
+Design patterns and best practices outlined in the previous sections come together in the last component of the solution - a reference implementation the machine learning pipeline that integrates data preprocessing, training, and deployment into a unified end to end workflow.
+
 
 
 ## Parking lot
