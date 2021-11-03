@@ -1,6 +1,6 @@
 # [WiP] NVIDIA Merlin on Vertex AI
 
-This repository compiles best practices and code samples for operationalization of [NVIDIA Merlin framework](https://developer.nvidia.com/nvidia-merlin) on [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai).
+This repository compiles prescriptive guidance and code samples for operationalization of [NVIDIA Merlin framework](https://developer.nvidia.com/nvidia-merlin) on [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai).
 
 [NVIDIA Merlin](https://developer.nvidia.com/nvidia-merlin) is and open-source framework for building large-scale deep learning recommender system. [Vertex AI](https://cloud.google.com/vertex-ai) is Google Cloud's unified Machine Learning platform to help data scientists and machine learning engineers increase experimentation, deploy faster, and manage models with confidence.
 
@@ -15,6 +15,8 @@ The content is this repository centers around five core areas:
 We assume that users of this repository have practical experience with both *NVIDIA Merlin* and *Vertex AI*. If you are unfamiliar with some of the core concepts or technologies used in this repo we recommend referring to  [NVIDIA Merlin](https://developer.nvidia.com/nvidia-merlin) and [Vertex AI](https://cloud.google.com/vertex-ai) documentation. 
 
 ## Architecture Overview
+
+The below figure summarizes high level architecture followed by the examples in this repo.
 
 ![NVIDIA Merlin](images/overview.png)
 
