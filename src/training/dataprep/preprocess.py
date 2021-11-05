@@ -107,10 +107,6 @@ def preprocess(args):
     valid_dataset = nvt.Dataset(valid_paths, engine='parquet', part_size=part_size) 
     logging.info("Created validation dataset with {} rows and {} partitions".format(valid_dataset.num_rows, valid_dataset.npartitions))
     
-    print(dir(train_dataset))
-    
-    return
-
     features, dict_dtypes = create_preprocessing_workflow(
         categorical_columns=CATEGORICAL_COLUMNS,
         continuous_columns=CONTINUOUS_COLUMNS,
