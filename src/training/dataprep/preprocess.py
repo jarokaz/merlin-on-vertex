@@ -103,7 +103,13 @@ def preprocess(args):
 
     logging.info("Creating datasets...")
     train_dataset = nvt.Dataset(train_paths, engine='parquet', part_size=part_size)
+    logging.info("Created training dataset with {} rows and {} partitions".format(train_dataset.num_rows, train_dataset.npartitions))
     valid_dataset = nvt.Dataset(valid_paths, engine='parquet', part_size=part_size) 
+    logging.info("Created validation dataset with {} rows and {} partitions".format(valid_dataset.num_rows, valid_dataset.npartitions))
+    
+    print(dir(train_dataset))
+    
+    return
 
     features, dict_dtypes = create_preprocessing_workflow(
         categorical_columns=CATEGORICAL_COLUMNS,
@@ -133,7 +139,7 @@ def preprocess(args):
                                             ['Training dataset processing', 'Validation dataset processing']):
         logging.info(f'{name} .....')
         start_time = time.time()
-        workflow.transform(train_dataset).to_parquet(
+        workflow.transform(dataset).to_parquet(
             output_path=output_folder,
             dtypes=dict_dtypes,
             cats=CATEGORICAL_COLUMNS,
@@ -155,8 +161,6 @@ def preprocess(args):
     logging.info(f"Saving workflow object at: {workflow_output_folder}")
     workflow.save(workflow_output_folder)
 
-    ## Shutdown clusters
-    client.close()
 
     end_time = time.time()
     elapsed_times['Total processing time'] = end_time - processing_start_time    
@@ -177,6 +181,10 @@ def preprocess(args):
     for elapsed_time_name, elapsed_time in elapsed_times.items():
         logging.info(f"{elapsed_time_name}         | {elapsed_time}")
     logging.info("======================================\n")    
+    
+    ## Shutdown clusters
+    client.close()
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description=("Multi-GPU Criteo Preprocessing"))
