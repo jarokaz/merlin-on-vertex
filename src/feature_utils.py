@@ -39,7 +39,7 @@ def categorical_columns():
             columns.append(col_name)
     return columns
 
-def numerical_columns():
+def continuous_columns():
     columns = []
     for col_name, col_type in get_criteo_col_dtypes().items:
         if col_type == 'hex':
