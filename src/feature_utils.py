@@ -33,18 +33,10 @@ def get_criteo_col_dtypes() -> Dict[str,Union[str, np.int32]]:
 
 
 def categorical_columns():
-    columns = []
-    for col_name, col_type in get_criteo_col_dtypes().items:
-        if col_type == np.int32:
-            columns.append(col_name)
-    return columns
+    return ["C" + str(x) for x in range(1, 27)]
 
 def continuous_columns():
-    columns = []
-    for col_name, col_type in get_criteo_col_dtypes().items:
-        if col_type == 'hex':
-            columns.append(col_name)
-    return columns
+    return ["I" + str(x) for x in range(1, 14)]
 
 def label_columns():
     return ['label']
